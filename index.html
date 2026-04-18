@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Jornada de Cura</title>
   
-  <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)"></script>
-  <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)"></script>
-  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-  <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
+  <!-- Links corrigidos! Sem formatação markdown -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   
   <style>
     body { -webkit-tap-highlight-color: transparent; }
@@ -24,16 +25,23 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
+    // --- SISTEMA DE ÍCONES PARA NAVEGADOR (CORRIGIDO E MAIS SEGURO) ---
     const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
-      const iconData = lucide.icons[name];
-      if (!iconData) return null;
-      const svgString = lucide.createElement(iconData).outerHTML;
-      const modifiedSvg = svgString
-        .replace(/width="\d+"/, `width="${size}"`)
-        .replace(/height="\d+"/, `height="${size}"`)
-        .replace(/stroke-width="\d+"/, `stroke-width="${strokeWidth}"`)
-        .replace(/class="[^"]*"/, `class="${className}"`);
-      return <span dangerouslySetInnerHTML={{ __html: modifiedSvg }} style={{ display: 'inline-flex' }} />;
+      try {
+        const iconData = lucide.icons[name];
+        if (!iconData) return null;
+        
+        const svgElement = lucide.createElement(iconData);
+        svgElement.setAttribute("width", size);
+        svgElement.setAttribute("height", size);
+        svgElement.setAttribute("stroke-width", strokeWidth);
+        if (className) svgElement.setAttribute("class", className);
+        
+        return <span dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }} style={{ display: 'inline-flex' }} />;
+      } catch (error) {
+        console.error("Erro ao carregar ícone", error);
+        return null;
+      }
     };
 
     const Shield = (props) => <Icon name="Shield" {...props} />;
@@ -66,6 +74,7 @@
 
     const iconMap = { Shield, Activity, Target };
 
+    // --- DADOS ---
     const MOTIVATIONAL_QUOTES = [
       "Cada vez que você resiste, você está reescrevendo o seu cérebro. Continue!",
       "A vontade dura minutos, mas o orgulho de resistir dura o dia todo.",
@@ -96,6 +105,7 @@
       { days: 365, title: 'Lenda Viva', icon: Milestone, color: 'text-slate-900', bg: 'bg-slate-400', border: 'border-slate-500' }
     ];
 
+    // --- ARMAZENAMENTO LOCAL SEGURO ---
     const loadData = (key, defaultValue) => {
       try {
         const saved = localStorage.getItem(key);
@@ -104,6 +114,15 @@
       return defaultValue;
     };
 
+    const saveData = (key, value) => {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.error("Erro ao salvar dados. Memória pode estar cheia ou bloqueada.", e);
+      }
+    };
+
+    // --- COMPONENTES UI ---
     const Card = ({ children, className = "" }) => (
       <div className={`bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 ${className}`}>
         {children}
@@ -191,10 +210,10 @@
       const [toast, setToast] = useState(null);
       const [quoteOfTheDay, setQuoteOfTheDay] = useState('');
 
-      useEffect(() => { localStorage.setItem('jc_habits', JSON.stringify(habits)); }, [habits]);
-      useEffect(() => { localStorage.setItem('jc_urges', JSON.stringify(urges)); }, [urges]);
-      useEffect(() => { localStorage.setItem('jc_relapses', JSON.stringify(relapses)); }, [relapses]);
-      useEffect(() => { localStorage.setItem('jc_notes', JSON.stringify(notes)); }, [notes]);
+      useEffect(() => { saveData('jc_habits', habits); }, [habits]);
+      useEffect(() => { saveData('jc_urges', urges); }, [urges]);
+      useEffect(() => { saveData('jc_relapses', relapses); }, [relapses]);
+      useEffect(() => { saveData('jc_notes', notes); }, [notes]);
 
       const [resetModal, setResetModal] = useState({ show: false, habitId: null });
       const [showAddHabit, setShowAddHabit] = useState(false);
