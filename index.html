@@ -3,76 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Jornada de Cura</title>
+  <title>Jornada de Cura - Superando Vícios</title>
   
-  <!-- Links corrigidos! Sem formatação markdown -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React e ReactDOM -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel para JSX -->
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.0/babel.min.js"></script>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Lucide para ícones -->
+  <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
   
   <style>
-    body { -webkit-tap-highlight-color: transparent; }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background-color: #f8fafc;
+      color: #1e293b;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Estilos personalizados para ícones SVG */
+    .lucide {
+      display: inline-block;
+      stroke-width: 2;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased overflow-x-hidden">
+<body>
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- SISTEMA DE ÍCONES PARA NAVEGADOR (CORRIGIDO E MAIS SEGURO) ---
-    const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
-      try {
-        const iconData = lucide.icons[name];
-        if (!iconData) return null;
-        
-        const svgElement = lucide.createElement(iconData);
-        svgElement.setAttribute("width", size);
-        svgElement.setAttribute("height", size);
-        svgElement.setAttribute("stroke-width", strokeWidth);
-        if (className) svgElement.setAttribute("class", className);
-        
-        return <span dangerouslySetInnerHTML={{ __html: svgElement.outerHTML }} style={{ display: 'inline-flex' }} />;
-      } catch (error) {
-        console.error("Erro ao carregar ícone", error);
-        return null;
+    // --- FUNÇÃO PARA CRIAR ÍCONES LUCIDE DE FORMA COMPATÍVEL ---
+    const createIcon = (iconName, size = 24, className = "", strokeWidth = 2) => {
+      if (!window.lucide || !window.lucide.icons || !window.lucide.icons[iconName]) {
+        console.warn(`Ícone ${iconName} não encontrado`);
+        return React.createElement('span', { className: 'w-6 h-6 inline-block' });
       }
+      
+      const iconData = window.lucide.icons[iconName];
+      const svgString = window.lucide.createElement(iconData);
+      
+      // Modificar atributos do SVG
+      const div = document.createElement('div');
+      div.innerHTML = svgString;
+      const svg = div.firstChild;
+      svg.setAttribute('width', size);
+      svg.setAttribute('height', size);
+      svg.setAttribute('stroke-width', strokeWidth);
+      if (className) svg.setAttribute('class', `lucide ${className}`);
+      
+      return React.createElement('span', {
+        dangerouslySetInnerHTML: { __html: svg.outerHTML },
+        style: { display: 'inline-flex' }
+      });
     };
 
-    const Shield = (props) => <Icon name="Shield" {...props} />;
-    const Activity = (props) => <Icon name="Activity" {...props} />;
-    const Heart = (props) => <Icon name="Heart" {...props} />;
-    const Wind = (props) => <Icon name="Wind" {...props} />;
-    const AlertCircle = (props) => <Icon name="AlertCircle" {...props} />;
-    const RefreshCw = (props) => <Icon name="RefreshCw" {...props} />;
-    const X = (props) => <Icon name="X" {...props} />;
-    const PlayCircle = (props) => <Icon name="PlayCircle" {...props} />;
-    const Trophy = (props) => <Icon name="Trophy" {...props} />;
-    const Star = (props) => <Icon name="Star" {...props} />;
-    const Award = (props) => <Icon name="Award" {...props} />;
-    const Crown = (props) => <Icon name="Crown" {...props} />;
-    const ThumbsUp = (props) => <Icon name="ThumbsUp" {...props} />;
-    const MessageSquare = (props) => <Icon name="MessageSquare" {...props} />;
-    const Bell = (props) => <Icon name="Bell" {...props} />;
-    const CheckCircle2 = (props) => <Icon name="CheckCircle2" {...props} />;
-    const ListPlus = (props) => <Icon name="ListPlus" {...props} />;
-    const BookOpen = (props) => <Icon name="BookOpen" {...props} />;
-    const Smile = (props) => <Icon name="Smile" {...props} />;
-    const Frown = (props) => <Icon name="Frown" {...props} />;
-    const Meh = (props) => <Icon name="Meh" {...props} />;
-    const Clock = (props) => <Icon name="Clock" {...props} />;
-    const Zap = (props) => <Icon name="Zap" {...props} />;
-    const Flame = (props) => <Icon name="Flame" {...props} />;
-    const Milestone = (props) => <Icon name="Milestone" {...props} />;
-    const Target = (props) => <Icon name="Target" {...props} />;
-    const Plus = (props) => <Icon name="Plus" {...props} />;
-
-    const iconMap = { Shield, Activity, Target };
+    // Componentes de ícone usando a função acima
+    const Shield = (props) => createIcon('Shield', props.size, props.className, props.strokeWidth);
+    const Activity = (props) => createIcon('Activity', props.size, props.className, props.strokeWidth);
+    const Heart = (props) => createIcon('Heart', props.size, props.className, props.strokeWidth);
+    const Wind = (props) => createIcon('Wind', props.size, props.className, props.strokeWidth);
+    const AlertCircle = (props) => createIcon('AlertCircle', props.size, props.className, props.strokeWidth);
+    const RefreshCw = (props) => createIcon('RefreshCw', props.size, props.className, props.strokeWidth);
+    const X = (props) => createIcon('X', props.size, props.className, props.strokeWidth);
+    const PlayCircle = (props) => createIcon('PlayCircle', props.size, props.className, props.strokeWidth);
+    const Trophy = (props) => createIcon('Trophy', props.size, props.className, props.strokeWidth);
+    const Star = (props) => createIcon('Star', props.size, props.className, props.strokeWidth);
+    const Award = (props) => createIcon('Award', props.size, props.className, props.strokeWidth);
+    const Crown = (props) => createIcon('Crown', props.size, props.className, props.strokeWidth);
+    const ThumbsUp = (props) => createIcon('ThumbsUp', props.size, props.className, props.strokeWidth);
+    const MessageSquare = (props) => createIcon('MessageSquare', props.size, props.className, props.strokeWidth);
+    const Bell = (props) => createIcon('Bell', props.size, props.className, props.strokeWidth);
+    const CheckCircle2 = (props) => createIcon('CheckCircle2', props.size, props.className, props.strokeWidth);
+    const ListPlus = (props) => createIcon('ListPlus', props.size, props.className, props.strokeWidth);
+    const BookOpen = (props) => createIcon('BookOpen', props.size, props.className, props.strokeWidth);
+    const Smile = (props) => createIcon('Smile', props.size, props.className, props.strokeWidth);
+    const Frown = (props) => createIcon('Frown', props.size, props.className, props.strokeWidth);
+    const Meh = (props) => createIcon('Meh', props.size, props.className, props.strokeWidth);
+    const Clock = (props) => createIcon('Clock', props.size, props.className, props.strokeWidth);
+    const Zap = (props) => createIcon('Zap', props.size, props.className, props.strokeWidth);
+    const Flame = (props) => createIcon('Flame', props.size, props.className, props.strokeWidth);
+    const Milestone = (props) => createIcon('Milestone', props.size, props.className, props.strokeWidth);
+    const Target = (props) => createIcon('Target', props.size, props.className, props.strokeWidth);
+    const Plus = (props) => createIcon('Plus', props.size, props.className, props.strokeWidth);
 
     // --- DADOS ---
     const MOTIVATIONAL_QUOTES = [
@@ -110,7 +161,9 @@
       try {
         const saved = localStorage.getItem(key);
         if (saved) return JSON.parse(saved);
-      } catch (e) { console.error("Erro ao carregar dados", e); }
+      } catch (e) { 
+        console.error("Erro ao carregar dados", e); 
+      }
       return defaultValue;
     };
 
@@ -118,15 +171,15 @@
       try {
         localStorage.setItem(key, JSON.stringify(value));
       } catch (e) {
-        console.error("Erro ao salvar dados. Memória pode estar cheia ou bloqueada.", e);
+        console.error("Erro ao salvar dados", e);
       }
     };
 
     // --- COMPONENTES UI ---
     const Card = ({ children, className = "" }) => (
-      <div className={`bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 ${className}`}>
-        {children}
-      </div>
+      React.createElement('div', { className: `bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 ${className}` },
+        children
+      )
     );
 
     const Button = ({ children, onClick, variant = "primary", className = "", icon: IconComponent }) => {
@@ -137,65 +190,86 @@
         danger: "bg-gradient-to-r from-rose-500 to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30",
         outline: "border-2 border-slate-200 text-slate-600 hover:bg-slate-50"
       };
-      return (
-        <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`}>
-          {IconComponent && <IconComponent size={20} />}
-          {children}
-        </button>
-      );
+      return React.createElement('button', {
+        onClick: onClick,
+        className: `${baseStyle} ${variants[variant]} ${className}`
+      }, [
+        IconComponent && React.createElement(IconComponent, { size: 20, key: "icon" }),
+        children
+      ]);
     };
 
     const BreathingExercise = ({ onClose }) => {
-      const [phase, setPhase] = useState('ready'); 
+      const [phase, setPhase] = useState('ready');
       const [timeLeft, setTimeLeft] = useState(0);
 
-      const startExercise = () => { setPhase('inhale'); setTimeLeft(4); };
+      const startExercise = () => { 
+        setPhase('inhale'); 
+        setTimeLeft(4); 
+      };
 
       useEffect(() => {
         let timer;
         if (phase !== 'ready' && timeLeft > 0) {
           timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
-        } else if (timeLeft === 0) {
-          if (phase === 'inhale') { setPhase('hold'); setTimeLeft(7); } 
-          else if (phase === 'hold') { setPhase('exhale'); setTimeLeft(8); } 
-          else if (phase === 'exhale') { setPhase('inhale'); setTimeLeft(4); }
+        } else if (timeLeft === 0 && phase !== 'ready') {
+          if (phase === 'inhale') { 
+            setPhase('hold'); 
+            setTimeLeft(7); 
+          } else if (phase === 'hold') { 
+            setPhase('exhale'); 
+            setTimeLeft(8); 
+          } else if (phase === 'exhale') { 
+            setPhase('inhale'); 
+            setTimeLeft(4); 
+          }
         }
         return () => clearTimeout(timer);
       }, [phase, timeLeft]);
 
       const getCircleStyle = () => {
         switch (phase) {
-          case 'inhale': return 'scale-150 bg-gradient-to-tr from-slate-300 to-slate-400 transition-all duration-[4000ms] ease-out';
-          case 'hold': return 'scale-150 bg-gradient-to-tr from-slate-500 to-slate-600 transition-all duration-[7000ms] ease-linear';
-          case 'exhale': return 'scale-100 bg-gradient-to-tr from-slate-200 to-slate-300 transition-all duration-[8000ms] ease-in-out';
-          default: return 'scale-100 bg-slate-100 text-slate-600 border-4 border-dashed border-slate-300';
+          case 'inhale': 
+            return 'scale-150 bg-gradient-to-tr from-slate-300 to-slate-400 transition-all duration-[4000ms] ease-out';
+          case 'hold': 
+            return 'scale-150 bg-gradient-to-tr from-slate-500 to-slate-600 transition-all duration-[7000ms] ease-linear';
+          case 'exhale': 
+            return 'scale-100 bg-gradient-to-tr from-slate-200 to-slate-300 transition-all duration-[8000ms] ease-in-out';
+          default: 
+            return 'scale-100 bg-slate-100 text-slate-600 border-4 border-dashed border-slate-300';
         }
       };
 
-      return (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white/10 border border-white/20 rounded-[40px] w-full max-w-md p-8 flex flex-col items-center text-center shadow-2xl relative">
-            <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white">
-              <X size={28} />
-            </button>
-            <Wind size={40} className="text-slate-300 mb-6" />
-            <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Respire</h2>
-            <p className="text-slate-300 mb-16 text-lg font-medium">
-              {phase === 'ready' ? 'Técnica 4-7-8' : phase === 'inhale' ? 'Inspire...' : phase === 'hold' ? 'Segure o ar...' : 'Expire lentamente...'}
-            </p>
-            <div className="relative flex items-center justify-center w-56 h-56 mb-16">
-              <div className={`absolute w-36 h-36 rounded-full flex items-center justify-center text-white ${getCircleStyle()}`}>
-                {phase !== 'ready' && <span className="text-4xl font-black">{timeLeft}</span>}
-              </div>
-              {phase === 'ready' && (
-                <button onClick={startExercise} className="z-10 bg-white text-slate-800 rounded-full p-5 shadow-xl hover:scale-110 transition-transform">
-                  <PlayCircle size={40} />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      );
+      return React.createElement('div', {
+        className: "fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      }, [
+        React.createElement('div', {
+          key: "modal",
+          className: "bg-white/10 border border-white/20 rounded-[40px] w-full max-w-md p-8 flex flex-col items-center text-center shadow-2xl relative"
+        }, [
+          React.createElement('button', {
+            key: "close",
+            onClick: onClose,
+            className: "absolute top-6 right-6 text-white/50 hover:text-white"
+          }, React.createElement(X, { size: 28 })),
+          React.createElement(Wind, { key: "icon", size: 40, className: "text-slate-300 mb-6" }),
+          React.createElement('h2', { key: "title", className: "text-3xl font-extrabold text-white mb-2 tracking-tight" }, "Respire"),
+          React.createElement('p', { key: "phaseText", className: "text-slate-300 mb-16 text-lg font-medium" },
+            phase === 'ready' ? 'Técnica 4-7-8' : phase === 'inhale' ? 'Inspire...' : phase === 'hold' ? 'Segure o ar...' : 'Expire lentamente...'
+          ),
+          React.createElement('div', { key: "circleContainer", className: "relative flex items-center justify-center w-56 h-56 mb-16" }, [
+            React.createElement('div', {
+              key: "circle",
+              className: `absolute w-36 h-36 rounded-full flex items-center justify-center text-white ${getCircleStyle()}`
+            }, phase !== 'ready' && React.createElement('span', { className: "text-4xl font-black" }, timeLeft)),
+            phase === 'ready' && React.createElement('button', {
+              key: "startBtn",
+              onClick: startExercise,
+              className: "z-10 bg-white text-slate-800 rounded-full p-5 shadow-xl hover:scale-110 transition-transform"
+            }, React.createElement(PlayCircle, { size: 40 }))
+          ])
+        ])
+      ]);
     };
 
     function App() {
@@ -242,12 +316,6 @@
         return { days, hours, minutes, seconds, totalDays: diff / (1000 * 60 * 60 * 24) };
       };
 
-      const getMaxStreakDays = () => {
-        if (habits.length === 0) return 0;
-        const streaks = habits.map(h => Math.floor(calculateTime(h.startTime).totalDays));
-        return Math.max(...streaks);
-      };
-
       const confirmReset = () => {
         if (!resetModal.habitId) return;
         const id = resetModal.habitId;
@@ -275,8 +343,13 @@
       const handleAddHabit = () => {
         if (!newHabitName.trim()) return;
         const newHabit = {
-          id: Date.now().toString(), name: newHabitName, startTime: Date.now(), iconName: 'Target',
-          gradient: 'from-slate-500 to-slate-700', lightBg: 'bg-slate-100', textCol: 'text-slate-700'
+          id: Date.now().toString(), 
+          name: newHabitName, 
+          startTime: Date.now(), 
+          iconName: 'Target',
+          gradient: 'from-slate-500 to-slate-700', 
+          lightBg: 'bg-slate-100', 
+          textCol: 'text-slate-700'
         };
         setHabits([...habits, newHabit]);
         setNewHabitName('');
@@ -285,310 +358,167 @@
       };
 
       const TimeBox = ({ value, label, gradient }) => (
-        <div className="flex flex-col items-center justify-center bg-white border-2 border-slate-100 rounded-2xl p-3 flex-1 relative overflow-hidden group">
-          <div className={`absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-20`} />
-          <span className="text-2xl sm:text-3xl font-black text-slate-800 leading-none mb-1">{value.toString().padStart(2, '0')}</span>
-          <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">{label}</span>
-        </div>
+        React.createElement('div', {
+          className: "flex flex-col items-center justify-center bg-white border-2 border-slate-100 rounded-2xl p-3 flex-1 relative overflow-hidden group"
+        }, [
+          React.createElement('div', {
+            key: "gradient",
+            className: `absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-20`
+          }),
+          React.createElement('span', { key: "value", className: "text-2xl sm:text-3xl font-black text-slate-800 leading-none mb-1" }, value.toString().padStart(2, '0')),
+          React.createElement('span', { key: "label", className: "text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest" }, label)
+        ])
       );
 
       const getMoodIcon = (moodType, size = 20) => {
         switch(moodType) {
-          case 'good': return <Smile size={size} className="text-emerald-500" />;
-          case 'bad': return <Frown size={size} className="text-rose-500" />;
-          default: return <Meh size={size} className="text-amber-500" />;
+          case 'good': return React.createElement(Smile, { size, className: "text-emerald-500" });
+          case 'bad': return React.createElement(Frown, { size, className: "text-rose-500" });
+          default: return React.createElement(Meh, { size, className: "text-amber-500" });
         }
       };
 
       const allEvents = [...urges.map(u => ({ ...u, type: 'resist' })), ...relapses.map(r => ({ ...r, type: 'relapse' }))].sort((a, b) => b.time - a.time);
+      const getIconComponent = (iconName) => {
+        const icons = { Shield, Activity, Target };
+        return icons[iconName] || Target;
+      };
 
-      return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 pb-28 selection:bg-slate-200">
-          {toast && (
-            <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md">
-              <div className={`px-5 py-4 rounded-2xl shadow-xl flex items-center gap-4 ${toast.type === 'success' ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white' : 'bg-gradient-to-r from-slate-700 to-slate-800 text-white'}`}>
-                {toast.type === 'success' ? <CheckCircle2 size={24} className="shrink-0" /> : <Bell size={24} className="shrink-0" />}
-                <p className="text-sm font-bold">{toast.message}</p>
-              </div>
-            </div>
-          )}
+      return React.createElement('div', { className: "min-h-screen bg-slate-50 text-slate-800 pb-28 selection:bg-slate-200" }, [
+        toast && React.createElement('div', {
+          key: "toast",
+          className: "fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-fadeIn"
+        }, React.createElement('div', {
+          className: `px-5 py-4 rounded-2xl shadow-xl flex items-center gap-4 ${toast.type === 'success' ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white' : 'bg-gradient-to-r from-slate-700 to-slate-800 text-white'}`
+        }, [
+          toast.type === 'success' ? React.createElement(CheckCircle2, { size: 24, className: "shrink-0", key: "icon" }) : React.createElement(Bell, { size: 24, className: "shrink-0", key: "icon" }),
+          React.createElement('p', { className: "text-sm font-bold", key: "message" }, toast.message)
+        ])),
+        
+        React.createElement('header', {
+          key: "header",
+          className: "bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white sticky top-0 z-40 shadow-md border-b border-slate-700"
+        }, React.createElement('div', { className: "max-w-md mx-auto px-5 py-5 flex justify-between items-center" }, [
+          React.createElement('div', { className: "flex items-center gap-3", key: "logo" }, [
+            React.createElement('div', { className: "bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10" }, React.createElement(Heart, { size: 24, fill: "currentColor", className: "text-slate-200" })),
+            React.createElement('h1', { className: "text-2xl font-black tracking-tight" }, "Jornada")
+          ]),
+          React.createElement('button', {
+            key: "sos",
+            onClick: () => setShowEmergency(true),
+            className: "flex items-center gap-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500 px-4 py-2 rounded-full text-sm font-bold transition-all"
+          }, [React.createElement(AlertCircle, { size: 18, className: "text-slate-200", key: "icon" }), "SOS"])
+        ])),
 
-          <header className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white sticky top-0 z-40 shadow-md border-b border-slate-700">
-            <div className="max-w-md mx-auto px-5 py-5 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10">
-                  <Heart size={24} fill="currentColor" className="text-slate-200" />
-                </div>
-                <h1 className="text-2xl font-black tracking-tight">Jornada</h1>
-              </div>
-              <button onClick={() => setShowEmergency(true)} className="flex items-center gap-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500 px-4 py-2 rounded-full text-sm font-bold transition-all">
-                <AlertCircle size={18} className="text-slate-200" /> SOS
-              </button>
-            </div>
-          </header>
+        React.createElement('main', { key: "main", className: "max-w-md mx-auto px-4 py-6 space-y-6" }, [
+          React.createElement('div', { key: "quote", className: "bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex gap-4 items-start relative overflow-hidden" }, [
+            React.createElement('div', { key: "bg", className: "absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-100 to-transparent rounded-bl-full opacity-50" }),
+            React.createElement(MessageSquare, { key: "icon", className: "text-slate-400 shrink-0 mt-1", size: 28 }),
+            React.createElement('div', { key: "content", className: "relative z-10" }, [
+              React.createElement('h3', { className: "text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5" }, "Inspiração Diária"),
+              React.createElement('p', { className: "text-slate-600 text-sm font-medium leading-relaxed" }, `"${quoteOfTheDay}"`)
+            ])
+          ]),
 
-          <main className="max-w-md mx-auto px-4 py-6 space-y-6">
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex gap-4 items-start relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-100 to-transparent rounded-bl-full opacity-50" />
-              <MessageSquare className="text-slate-400 shrink-0 mt-1" size={28} />
-              <div className="relative z-10">
-                <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5">Inspiração Diária</h3>
-                <p className="text-slate-600 text-sm font-medium leading-relaxed">"{quoteOfTheDay}"</p>
-              </div>
-            </div>
+          activeTab === 'trackers' && React.createElement('div', { key: "trackers", className: "space-y-6" }, [
+            ...habits.map(habit => {
+              const time = calculateTime(habit.startTime);
+              const IconComp = getIconComponent(habit.iconName);
+              return React.createElement(Card, { key: habit.id, className: "relative overflow-hidden group" }, [
+                React.createElement('div', { key: "gradient", className: `absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${habit.gradient}` }),
+                React.createElement('div', { key: "header", className: "flex justify-between items-center mb-6 mt-2" }, [
+                  React.createElement('div', { className: "flex items-center gap-4" }, [
+                    React.createElement('div', { className: `p-4 rounded-2xl ${habit.lightBg} ${habit.textCol} shadow-inner border border-slate-200` }, React.createElement(IconComp, { size: 28 })),
+                    React.createElement('h2', { className: "text-xl font-black text-slate-800 tracking-tight" }, habit.name)
+                  ])
+                ]),
+                React.createElement('div', { key: "timebox", className: "flex justify-between gap-2 sm:gap-3 mb-8" }, [
+                  React.createElement(TimeBox, { value: time.days, label: "Dias", gradient: habit.gradient }),
+                  React.createElement(TimeBox, { value: time.hours, label: "Horas", gradient: habit.gradient }),
+                  React.createElement(TimeBox, { value: time.minutes, label: "Min", gradient: habit.gradient }),
+                  React.createElement(TimeBox, { value: time.seconds, label: "Seg", gradient: habit.gradient })
+                ]),
+                React.createElement('div', { key: "buttons", className: "flex flex-col gap-3" }, [
+                  React.createElement(Button, {
+                    variant: "success",
+                    className: "w-full py-5 text-lg shadow-teal-500/20",
+                    onClick: () => handleResist(habit.id),
+                    icon: ThumbsUp
+                  }, "Senti vontade, mas resisti!")
+                ]),
+                React.createElement('div', { key: "reset", className: "mt-5 border-t border-slate-100 pt-4 flex justify-center" }, [
+                  React.createElement('button', {
+                    onClick: () => setResetModal({ show: true, habitId: habit.id }),
+                    className: "flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                  }, [React.createElement(RefreshCw, { size: 14, key: "icon" }), "Tive uma recaída (Zerar)"])
+                ])
+              ]);
+            }),
+            React.createElement('button', {
+              key: "add-habit-btn",
+              onClick: () => setShowAddHabit(true),
+              className: "w-full py-5 border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-all"
+            }, [
+              React.createElement('div', { className: "bg-slate-100 p-3 rounded-full text-slate-600" }, React.createElement(Plus, { size: 24 })),
+              React.createElement('span', { className: "font-bold text-sm" }, "Monitorar Outro Vício")
+            ])
+          ]),
 
-            {activeTab === 'trackers' && (
-              <div className="space-y-6">
-                {habits.map(habit => {
-                  const time = calculateTime(habit.startTime);
-                  const IconComp = iconMap[habit.iconName] || Target;
-                  return (
-                    <Card key={habit.id} className="relative overflow-hidden group">
-                      <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${habit.gradient}`} />
-                      <div className="flex justify-between items-center mb-6 mt-2">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-4 rounded-2xl ${habit.lightBg} ${habit.textCol} shadow-inner border border-slate-200`}>
-                            <IconComp size={28} />
-                          </div>
-                          <h2 className="text-xl font-black text-slate-800 tracking-tight">{habit.name}</h2>
-                        </div>
-                      </div>
-                      <div className="flex justify-between gap-2 sm:gap-3 mb-8">
-                        <TimeBox value={time.days} label="Dias" gradient={habit.gradient} />
-                        <TimeBox value={time.hours} label="Horas" gradient={habit.gradient} />
-                        <TimeBox value={time.minutes} label="Min" gradient={habit.gradient} />
-                        <TimeBox value={time.seconds} label="Seg" gradient={habit.gradient} />
-                      </div>
-                      <div className="flex flex-col gap-3">
-                        <Button variant="success" className="w-full py-5 text-lg shadow-teal-500/20" onClick={() => handleResist(habit.id)} icon={ThumbsUp}>
-                          Senti vontade, mas resisti!
-                        </Button>
-                      </div>
-                      <div className="mt-5 border-t border-slate-100 pt-4 flex justify-center">
-                        <button onClick={() => setResetModal({ show: true, habitId: habit.id })} className="flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
-                          <RefreshCw size={14} /> Tive uma recaída (Zerar)
-                        </button>
-                      </div>
-                    </Card>
-                  );
-                })}
-                <button onClick={() => setShowAddHabit(true)} className="w-full py-5 border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-all">
-                  <div className="bg-slate-100 p-3 rounded-full text-slate-600"><Plus size={24} /></div>
-                  <span className="font-bold text-sm">Monitorar Outro Vício</span>
-                </button>
-              </div>
-            )}
+          activeTab === 'journal' && React.createElement('div', { key: "journal", className: "space-y-6" }, [
+            React.createElement(Card, { className: "border-t-4 border-t-slate-700" }, [
+              React.createElement('h2', { className: "text-xl font-black text-slate-800 mb-2 flex items-center gap-2" }, [
+                React.createElement(BookOpen, { size: 24, className: "text-slate-700" }),
+                "Como você está se sentindo?"
+              ]),
+              React.createElement('p', { className: "text-sm text-slate-500 mb-5" }, "Selecione o seu humor primeiro para guiar o seu registro."),
+              React.createElement('div', { className: "flex items-center mb-4" }, [
+                React.createElement('div', { className: "flex bg-slate-100 rounded-xl p-1 border border-slate-200 w-full sm:w-auto" }, [
+                  { id: 'bad', icon: Frown, color: 'text-rose-500' },
+                  { id: 'neutral', icon: Meh, color: 'text-amber-500' },
+                  { id: 'good', icon: Smile, color: 'text-emerald-500' }
+                ].map(m => React.createElement('button', {
+                  key: m.id,
+                  onClick: () => setNoteMood(m.id),
+                  className: `p-3 flex-1 sm:flex-none rounded-lg transition-all flex justify-center ${noteMood === m.id ? 'bg-white shadow-sm border border-slate-200' : 'hover:bg-slate-200 opacity-60 hover:opacity-100'}`
+                }, React.createElement(m.icon, { size: 24, className: m.color }))))
+              ]),
+              React.createElement('textarea', {
+                value: noteText,
+                onChange: (e) => setNoteText(e.target.value),
+                placeholder: noteMood === 'good' ? "Hoje não senti vontade, estou forte e no controle. O destaque do dia foi..." :
+                           noteMood === 'bad' ? "Hoje foi muito difícil, senti muita vontade e acabei caindo. Isso aconteceu porque..." :
+                           "Senti uma vontade forte hoje, hesitei, mas consegui resistir. O que me ajudou foi...",
+                className: "w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-100 transition-all min-h-[120px] resize-none mb-4"
+              }),
+              React.createElement('div', { className: "flex justify-end" }, React.createElement(Button, { onClick: handleSaveNote, variant: "primary", className: "px-8 py-3" }, "Salvar Registro"))
+            ]),
+            React.createElement('div', { className: "space-y-4" }, [
+              React.createElement('h3', { className: "font-bold text-slate-400 uppercase tracking-widest text-xs px-2" }, "Seus Registros"),
+              notes.length === 0 ? React.createElement('div', { className: "text-center py-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200" }, [
+                React.createElement(BookOpen, { size: 32, className: "mx-auto text-slate-300 mb-3" }),
+                React.createElement('p', { className: "text-slate-500 font-medium" }, "Seu diário está vazio.", React.createElement('br'), "Comece a escrever a sua jornada!")
+              ]) : notes.map(note => React.createElement(Card, { key: note.id, className: "!p-4 sm:!p-5 border-slate-200" }, [
+                React.createElement('div', { className: "flex justify-between items-start mb-3" }, [
+                  React.createElement('div', { className: "flex items-center gap-3" }, [
+                    React.createElement('div', { className: "bg-slate-100 p-2.5 rounded-xl border border-slate-200" }, getMoodIcon(note.mood, 24)),
+                    React.createElement('div', null, React.createElement('span', { className: "bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md" }, `Dia ${note.streakAtTime} limpo`))
+                  ]),
+                  React.createElement('span', { className: "text-xs font-bold text-slate-400" }, `${new Date(note.date).toLocaleDateString('pt-BR')} às ${new Date(note.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`)
+                ]),
+                React.createElement('p', { className: "text-slate-700 leading-relaxed text-sm whitespace-pre-wrap" }, note.text)
+              ]))
+            ])
+          ]),
 
-            {activeTab === 'journal' && (
-              <div className="space-y-6">
-                <Card className="border-t-4 border-t-slate-700">
-                  <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
-                    <BookOpen size={24} className="text-slate-700" /> Como você está se sentindo?
-                  </h2>
-                  <p className="text-sm text-slate-500 mb-5">Selecione o seu humor primeiro para guiar o seu registro.</p>
-                  <div className="flex items-center mb-4">
-                    <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200 w-full sm:w-auto">
-                      {[
-                        { id: 'bad', icon: Frown, color: 'text-rose-500', activeBg: 'bg-white shadow-sm border border-slate-200' },
-                        { id: 'neutral', icon: Meh, color: 'text-amber-500', activeBg: 'bg-white shadow-sm border border-slate-200' },
-                        { id: 'good', icon: Smile, color: 'text-emerald-500', activeBg: 'bg-white shadow-sm border border-slate-200' }
-                      ].map(m => (
-                        <button key={m.id} onClick={() => setNoteMood(m.id)} className={`p-3 flex-1 sm:flex-none rounded-lg transition-all flex justify-center ${noteMood === m.id ? m.activeBg : 'hover:bg-slate-200 opacity-60 hover:opacity-100'}`}>
-                          <m.icon size={24} className={m.color} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <textarea 
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                    placeholder={
-                      noteMood === 'good' ? "Hoje não senti vontade, estou forte e no controle. O destaque do dia foi..." :
-                      noteMood === 'bad' ? "Hoje foi muito difícil, senti muita vontade e acabei caindo. Isso aconteceu porque..." :
-                      "Senti uma vontade forte hoje, hesitei, mas consegui resistir. O que me ajudou foi..."
-                    }
-                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-100 transition-all min-h-[120px] resize-none mb-4"
-                  />
-                  <div className="flex justify-end"><Button onClick={handleSaveNote} variant="primary" className="px-8 py-3">Salvar Registro</Button></div>
-                </Card>
-
-                <div className="space-y-4">
-                  <h3 className="font-bold text-slate-400 uppercase tracking-widest text-xs px-2">Seus Registros</h3>
-                  {notes.length === 0 ? (
-                    <div className="text-center py-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                      <BookOpen size={32} className="mx-auto text-slate-300 mb-3" />
-                      <p className="text-slate-500 font-medium">Seu diário está vazio.<br/>Comece a escrever a sua jornada!</p>
-                    </div>
-                  ) : (
-                    notes.map(note => (
-                      <Card key={note.id} className="!p-4 sm:!p-5 border-slate-200">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-200">{getMoodIcon(note.mood, 24)}</div>
-                            <div><span className="bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md">Dia {note.streakAtTime} limpo</span></div>
-                          </div>
-                          <span className="text-xs font-bold text-slate-400">{new Date(note.date).toLocaleDateString('pt-BR')} às {new Date(note.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        <p className="text-slate-700 leading-relaxed text-sm whitespace-pre-wrap">{note.text}</p>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'badges' && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-black text-slate-800">Suas Conquistas</h2>
-                  <p className="text-sm font-medium text-slate-500 mt-1">Acumule dias limpos para desbloquear.</p>
-                </div>
-                {habits.map(habit => {
-                  const time = calculateTime(habit.startTime);
-                  const IconComp = iconMap[habit.iconName] || Target;
-                  return (
-                    <Card key={`badges-${habit.id}`} className="mb-6 overflow-hidden">
-                      <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-                        <div className={`p-2 rounded-lg ${habit.lightBg} ${habit.textCol} border border-slate-200`}><IconComp size={20} /></div>
-                        <h3 className="font-bold text-slate-800">{habit.name}</h3>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                        {BADGES.map((badge, idx) => {
-                          const isUnlocked = time.totalDays >= badge.days;
-                          return (
-                            <div key={idx} className={`flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl transition-all ${isUnlocked ? `bg-white shadow-sm border-2 ${badge.border}` : 'bg-slate-50 border-2 border-slate-100 opacity-60 grayscale'}`}>
-                              <div className={`p-3 sm:p-4 rounded-full mb-3 ${isUnlocked ? badge.bg : 'bg-slate-200'} ${isUnlocked ? badge.color : 'text-slate-400'} shadow-inner border border-white`}><badge.icon size={24} /></div>
-                              <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wide leading-tight ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>{badge.title}</span>
-                              <span className="text-[10px] font-bold text-slate-400 mt-1">{badge.days} {badge.days === 1 ? 'dia' : 'dias'}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-
-            {activeTab === 'more' && (
-              <div className="space-y-6">
-                <Card className="border-t-4 border-t-slate-700">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <h2 className="text-xl font-black text-slate-800 flex items-center gap-2"><ListPlus size={24} className="text-slate-700" /> Histórico</h2>
-                    <div className="flex gap-2">
-                      <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-black shadow-sm flex items-center gap-1"><ThumbsUp size={12} /> {urges.length} Vitórias</div>
-                      <div className="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black shadow-sm flex items-center gap-1"><RefreshCw size={12} /> {relapses.length} Recaídas</div>
-                    </div>
-                  </div>
-                  <p className="text-sm font-medium text-slate-500 mb-6">Acompanhe as vezes que você resistiu ou recaiu. Cada registro ajuda no seu autoconhecimento:</p>
-                  {allEvents.length === 0 ? (
-                    <div className="text-center py-8 bg-slate-50 rounded-2xl border border-slate-200">
-                      <ThumbsUp size={32} className="mx-auto text-slate-300 mb-2" />
-                      <p className="text-slate-500 text-sm font-medium">Nenhum registro ainda.<br/>Você consegue!</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {allEvents.map(event => {
-                        const habit = habits.find(h => h.id === event.habitId);
-                        const date = new Date(event.time);
-                        const isResist = event.type === 'resist';
-                        return (
-                          <div key={event.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-4">
-                              <div className={`${isResist ? 'bg-slate-800 text-white' : 'bg-rose-100 text-rose-600'} p-2.5 rounded-xl shadow-sm`}>{isResist ? <CheckCircle2 size={20} /> : <RefreshCw size={20} />}</div>
-                              <div>
-                                <p className={`text-sm font-black ${isResist ? 'text-slate-800' : 'text-rose-600'}`}>{isResist ? 'Resistiu com sucesso!' : 'Tive uma recaída'}</p>
-                                <p className="text-xs font-bold text-slate-500">{habit?.name}</p>
-                              </div>
-                            </div>
-                            <div className="text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">{date.toLocaleDateString('pt-BR')} <br/>{date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </Card>
-
-                <div className="pt-4">
-                  <h2 className="text-2xl font-black text-slate-800 mb-4 px-2">Dicas Práticas</h2>
-                  <div className="space-y-4">
-                    <Card>
-                      <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2"><Shield size={20} className="text-slate-500" /> Pornografia/Masturbação</h3>
-                      <ul className="space-y-3 text-sm font-medium text-slate-600">
-                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Cuidado com o HALT:</strong> A vontade ataca mais quando você está com Fome, Irritado, Solitário ou Cansado.</span></li>
-                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Mude de Ambiente:</strong> Sentiu a vontade? Levante-se imediatamente e saia do cômodo. O movimento físico quebra o padrão mental.</span></li>
-                      </ul>
-                    </Card>
-                    <Card>
-                      <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2"><Activity size={20} className="text-slate-500" /> Roer Unhas</h3>
-                      <ul className="space-y-3 text-sm font-medium text-slate-600">
-                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Identifique o Gatilho:</strong> Você rói as unhas quando está ansioso, entediado ou assistindo TV? Use o diário da app para anotar.</span></li>
-                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Mãos Ocupadas:</strong> Tenha sempre por perto uma bola antiestresse, um elástico de cabelo no pulso ou um anel giratório.</span></li>
-                      </ul>
-                    </Card>
-                    <Card>
-                      <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2"><Target size={20} className="text-slate-500" /> Compras por Impulso</h3>
-                      <ul className="space-y-3 text-sm font-medium text-slate-600">
-                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>A Regra das 24h:</strong> Quer comprar algo que não é essencial? Coloque no carrinho e espere 24 horas.</span></li>
-                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Desinstale Aplicativos:</strong> Crie atrito. Exclua o app de entregas ou remova os seus cartões salvos.</span></li>
-                      </ul>
-                    </Card>
-                  </div>
-                </div>
-              </div>
-            )}
-          </main>
-
-          {showAddHabit && (
-            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-xl relative">
-                <button onClick={() => setShowAddHabit(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1"><X size={20} /></button>
-                <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2"><Plus size={24} className="text-slate-500" /> Novo Vício</h3>
-                <p className="text-sm text-slate-500 mb-4">O que mais você deseja monitorar?</p>
-                <input autoFocus type="text" value={newHabitName} onChange={(e) => setNewHabitName(e.target.value)} placeholder="Nome do hábito..." className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-4 text-slate-700 font-bold focus:outline-none focus:border-slate-500 focus:ring-4 focus:ring-slate-100 transition-all mb-6" />
-                <Button onClick={handleAddHabit} variant="primary" className="w-full">Começar a Monitorar</Button>
-              </div>
-            </div>
-          )}
-
-          {resetModal.show && (
-            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-xl relative text-center">
-                <div className="bg-rose-100 text-rose-500 p-4 rounded-full inline-flex mb-4"><RefreshCw size={32} /></div>
-                <h3 className="text-xl font-black text-slate-800 mb-2">Tive uma recaída</h3>
-                <p className="text-sm text-slate-500 mb-6">Lembre-se: uma recaída não zera o seu aprendizado. Respire fundo. Tem certeza de que quer zerar este contador?</p>
-                <div className="flex gap-3">
-                  <button onClick={() => setResetModal({ show: false, habitId: null })} className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Cancelar</button>
-                  <button onClick={confirmReset} className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-sm">Sim, zerar</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 pb-safe pt-2 z-40">
-            <div className="max-w-md mx-auto flex justify-around px-2 pb-2">
-              {[{ id: 'trackers', icon: Shield, label: 'Contadores' }, { id: 'journal', icon: BookOpen, label: 'Diário' }, { id: 'badges', icon: Trophy, label: 'Conquistas' }, { id: 'more', icon: ListPlus, label: 'Mais' }].map(tab => {
-                const isActive = activeTab === tab.id;
-                const IconComponent = tab.icon;
-                return (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center justify-center w-16 sm:w-20 pt-2 pb-1 gap-1 transition-all ${isActive ? 'text-slate-800 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-                    <div className={`relative ${isActive ? 'drop-shadow-md' : ''}`}>
-                      <IconComponent size={24} strokeWidth={isActive ? 2.5 : 2} />
-                      {isActive && <span className="absolute -bottom-2 left-1/2 w-1.5 h-1.5 bg-slate-800 rounded-full transform -translate-x-1/2" />}
-                    </div>
-                    <span className={`text-[10px] font-bold mt-1 ${isActive ? 'opacity-100' : 'opacity-70'}`}>{tab.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
-          {showEmergency && <BreathingExercise onClose={() => setShowEmergency(false)} />}
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+          activeTab === 'badges' && React.createElement('div', { key: "badges", className: "space-y-6" }, [
+            React.createElement('div', { className: "text-center mb-8" }, [
+              React.createElement('h2', { className: "text-2xl font-black text-slate-800" }, "Suas Conquistas"),
+              React.createElement('p', { className: "text-sm font-medium text-slate-500 mt-1" }, "Acumule dias limpos para desbloquear.")
+            ]),
+            ...habits.map(habit => {
+              const time = calculateTime(habit.startTime);
+              const IconComp = getIconComponent(habit.iconName);
+              return React.createElement(Card, { key: `badges-${habit.id}`, className: "mb-6 overflow-hidden" }, [
+                React.createElement('div', { className: "flex items-center gap-3 mb-6 border-b border-slate-100 pb-4" }, [
+                  React.createElement('div', { className: `p-2 rounded-lg ${habit.lightBg} ${habit.textCol} border border-slate-200` }, React.createElement(IconComp, { size: 20 })),
+                  React.createElement('h3', { className: "font-bold text-slate-800" }, habit
