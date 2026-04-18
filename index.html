@@ -1,16 +1,15 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Jornada de Cura</title>
   
-  <!-- Bibliotecas necessárias -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)"></script>
+  <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)"></script>
+  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
   
   <style>
     body { -webkit-tap-highlight-color: transparent; }
@@ -25,7 +24,6 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- SISTEMA DE ÍCONES PARA NAVEGADOR ---
     const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
       const iconData = lucide.icons[name];
       if (!iconData) return null;
@@ -68,7 +66,6 @@
 
     const iconMap = { Shield, Activity, Target };
 
-    // --- DADOS ---
     const MOTIVATIONAL_QUOTES = [
       "Cada vez que você resiste, você está reescrevendo o seu cérebro. Continue!",
       "A vontade dura minutos, mas o orgulho de resistir dura o dia todo.",
@@ -99,7 +96,6 @@
       { days: 365, title: 'Lenda Viva', icon: Milestone, color: 'text-slate-900', bg: 'bg-slate-400', border: 'border-slate-500' }
     ];
 
-    // --- ARMAZENAMENTO LOCAL ---
     const loadData = (key, defaultValue) => {
       try {
         const saved = localStorage.getItem(key);
@@ -108,7 +104,6 @@
       return defaultValue;
     };
 
-    // --- COMPONENTES UI ---
     const Card = ({ children, className = "" }) => (
       <div className={`bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 ${className}`}>
         {children}
@@ -184,7 +179,6 @@
       );
     };
 
-    // --- APP PRINCIPAL ---
     function App() {
       const [habits, setHabits] = useState(() => loadData('jc_habits', DEFAULT_HABITS));
       const [urges, setUrges] = useState(() => loadData('jc_urges', []));
@@ -227,6 +221,12 @@
         const minutes = Math.floor((diff / 1000 / 60) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
         return { days, hours, minutes, seconds, totalDays: diff / (1000 * 60 * 60 * 24) };
+      };
+
+      const getMaxStreakDays = () => {
+        if (habits.length === 0) return 0;
+        const streaks = habits.map(h => Math.floor(calculateTime(h.startTime).totalDays));
+        return Math.max(...streaks);
       };
 
       const confirmReset = () => {
