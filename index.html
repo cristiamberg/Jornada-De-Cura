@@ -1,431 +1,750 @@
-```react
-import React, { useState, useEffect } from 'react';
-import { 
-  Shield, 
-  Activity, 
-  Heart, 
-  Wind, 
-  AlertCircle, 
-  RefreshCw, 
-  X, 
-  PlayCircle,
-  Trophy,
-  Star,
-  Award,
-  Crown,
-  ThumbsUp,
-  MessageSquare,
-  Bell,
-  CheckCircle2,
-  ListPlus,
-  BookOpen,
-  Smile,
-  Frown,
-  Meh,
-  Clock,
-  Zap,
-  Flame,
-  Milestone,
-  Target,
-  Plus
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jornada de Cura</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Carregando os ícones do Lucide via script -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Esconde a barra de rolagem mas permite rolar */
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Padding para dispositivos móveis com barra em baixo (iOS) */
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+  <div id="root"></div>
 
-// --- MAPEAMENTO DE ÍCONES PARA O LOCALSTORAGE ---
-const iconMap = {
-  Shield,
-  Activity,
-  Target
-};
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-// --- DADOS E CONSTANTES ---
-const MOTIVATIONAL_QUOTES = [
-  "Cada vez que você resiste, você está reescrevendo o seu cérebro. Continue!",
-  "A vontade dura minutos, mas o orgulho de resistir dura o dia todo.",
-  "O progresso não é linear. Um dia de cada vez.",
-  "Você é muito maior do que os seus impulsos momentâneos.",
-  "A disciplina é a ponte entre os seus objetivos e as suas realizações.",
-  "Não troque o que você mais quer na vida por aquilo que você quer agora.",
-  "Sua mente é seu próprio castelo. Defenda-o.",
-  "O suor do esforço de hoje é o sorriso da vitória de amanhã.",
-  "Caia 7 vezes, levante-se 8. A sua força está na resiliência.",
-  "O desconforto da mudança é o preço da sua nova liberdade."
-];
-
-const DEFAULT_HABITS = [
-  { id: 'porn', name: 'Pornografia / Masturbação', startTime: Date.now() - (1000 * 60 * 60 * 24 * 2.5), iconName: 'Shield', gradient: 'from-slate-600 to-slate-800', lightBg: 'bg-slate-100', textCol: 'text-slate-700' },
-  { id: 'nails', name: 'Roer Unhas', startTime: Date.now() - (1000 * 60 * 60 * 24 * 8), iconName: 'Activity', gradient: 'from-slate-500 to-slate-700', lightBg: 'bg-slate-100', textCol: 'text-slate-700' }
-];
-
-const BADGES = [
-  { days: 0.5, title: 'O Início (12h)', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200' },
-  { days: 1, title: 'Primeiro Passo', icon: Star, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' },
-  { days: 3, title: 'Guerreiro', icon: Shield, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-300' },
-  { days: 7, title: 'Uma Semana!', icon: Award, color: 'text-slate-700', bg: 'bg-slate-200', border: 'border-slate-300' },
-  { days: 15, title: 'Inabalável', icon: Trophy, color: 'text-slate-700', bg: 'bg-slate-200', border: 'border-slate-300' },
-  { days: 30, title: 'Mestre do Hábito', icon: Crown, color: 'text-slate-800', bg: 'bg-slate-300', border: 'border-slate-400' },
-  { days: 60, title: 'Força de Vontade', icon: Zap, color: 'text-slate-800', bg: 'bg-slate-300', border: 'border-slate-400' },
-  { days: 90, title: 'Renascido', icon: Flame, color: 'text-slate-900', bg: 'bg-slate-400', border: 'border-slate-500' },
-  { days: 365, title: 'Lenda Viva', icon: Milestone, color: 'text-slate-900', bg: 'bg-slate-400', border: 'border-slate-500' }
-];
-
-// --- FUNÇÕES DE ARMAZENAMENTO LOCAL ---
-const loadData = (key, defaultValue) => {
-  try {
-    const saved = localStorage.getItem(key);
-    if (saved) return JSON.parse(saved);
-  } catch (e) {
-    console.error("Erro ao carregar dados", e);
-  }
-  return defaultValue;
-};
-
-// --- COMPONENTES AUXILIARES ---
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 ${className}`}>
-    {children}
-  </div>
-);
-
-const Button = ({ children, onClick, variant = "primary", className = "", icon: Icon }) => {
-  const baseStyle = "flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold transition-all active:scale-95 shadow-sm";
-  const variants = {
-    primary: "bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-500/30",
-    success: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-teal-500/30",
-    danger: "bg-gradient-to-r from-rose-500 to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30",
-    outline: "border-2 border-slate-200 text-slate-600 hover:bg-slate-50",
-    ghost: "bg-transparent text-slate-500 hover:bg-slate-100"
-  };
-
-  return (
-    <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`}>
-      {Icon && <Icon size={20} />}
-      {children}
-    </button>
-  );
-};
-
-// --- COMPONENTE DE RESPIRAÇÃO (SOS) ---
-const BreathingExercise = ({ onClose }) => {
-  const [phase, setPhase] = useState('ready'); 
-  const [timeLeft, setTimeLeft] = useState(0);
-
-  const startExercise = () => {
-    setPhase('inhale');
-    setTimeLeft(4);
-  };
-
-  useEffect(() => {
-    let timer;
-    if (phase !== 'ready' && timeLeft > 0) {
-      timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
-    } else if (timeLeft === 0) {
-      if (phase === 'inhale') { setPhase('hold'); setTimeLeft(7); } 
-      else if (phase === 'hold') { setPhase('exhale'); setTimeLeft(8); } 
-      else if (phase === 'exhale') { setPhase('inhale'); setTimeLeft(4); }
-    }
-    return () => clearTimeout(timer);
-  }, [phase, timeLeft]);
-
-  const getCircleStyle = () => {
-    switch (phase) {
-      case 'inhale': return 'scale-150 bg-gradient-to-tr from-slate-300 to-slate-400 shadow-lg shadow-slate-400/50 transition-all duration-[4000ms] ease-out';
-      case 'hold': return 'scale-150 bg-gradient-to-tr from-slate-500 to-slate-600 shadow-lg shadow-slate-500/50 transition-all duration-[7000ms] ease-linear';
-      case 'exhale': return 'scale-100 bg-gradient-to-tr from-slate-200 to-slate-300 shadow-lg shadow-slate-300/50 transition-all duration-[8000ms] ease-in-out';
-      default: return 'scale-100 bg-slate-100 text-slate-600 border-4 border-dashed border-slate-300';
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-white/10 border border-white/20 rounded-[40px] w-full max-w-md p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
-          <X size={28} />
-        </button>
-        <Wind size={40} className="text-slate-300 mb-6 drop-shadow-md" />
-        <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Respire</h2>
-        <p className="text-slate-300 mb-16 text-lg font-medium">
-          {phase === 'ready' ? 'Técnica 4-7-8 para acalmar a mente' : 
-           phase === 'inhale' ? 'Inspire...' : 
-           phase === 'hold' ? 'Segure o ar...' : 'Expire lentamente...'}
-        </p>
-
-        <div className="relative flex items-center justify-center w-56 h-56 mb-16">
-          <div className={`absolute w-36 h-36 rounded-full flex items-center justify-center text-white ${getCircleStyle()}`}>
-            {phase !== 'ready' && <span className="text-4xl font-black drop-shadow-md">{timeLeft}</span>}
-          </div>
-          {phase === 'ready' && (
-            <button onClick={startExercise} className="z-10 bg-white text-slate-800 rounded-full p-5 shadow-xl hover:scale-110 transition-transform">
-              <PlayCircle size={40} />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- COMPONENTE PRINCIPAL ---
-export default function App() {
-  // Estados Principais (Carregando do LocalStorage)
-  const [habits, setHabits] = useState(() => loadData('jc_habits', DEFAULT_HABITS));
-  const [urges, setUrges] = useState(() => loadData('jc_urges', []));
-  const [relapses, setRelapses] = useState(() => loadData('jc_relapses', []));
-  const [notes, setNotes] = useState(() => loadData('jc_notes', []));
-  
-  const [now, setNow] = useState(Date.now());
-  const [showEmergency, setShowEmergency] = useState(false);
-  const [activeTab, setActiveTab] = useState('trackers');
-  const [toast, setToast] = useState(null);
-  const [quoteOfTheDay, setQuoteOfTheDay] = useState('');
-
-  // Salvando no LocalStorage sempre que os estados mudarem
-  useEffect(() => { localStorage.setItem('jc_habits', JSON.stringify(habits)); }, [habits]);
-  useEffect(() => { localStorage.setItem('jc_urges', JSON.stringify(urges)); }, [urges]);
-  useEffect(() => { localStorage.setItem('jc_relapses', JSON.stringify(relapses)); }, [relapses]);
-  useEffect(() => { localStorage.setItem('jc_notes', JSON.stringify(notes)); }, [notes]);
-
-  // Estados Modal de Recaída
-  const [resetModal, setResetModal] = useState({ show: false, habitId: null });
-
-  // Estados Formulário Add Vício
-  const [showAddHabit, setShowAddHabit] = useState(false);
-  const [newHabitName, setNewHabitName] = useState('');
-
-  // Estados do Formulário de Notas
-  const [noteText, setNoteText] = useState('');
-  const [noteMood, setNoteMood] = useState('neutral');
-
-  useEffect(() => {
-    const dayOfYear = Math.floor(Date.now() / 86400000);
-    setQuoteOfTheDay(MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length]);
-
-    const interval = setInterval(() => {
-      const currentTime = new Date();
-      setNow(currentTime.getTime());
-
-      const hours = currentTime.getHours();
-      const minutes = currentTime.getMinutes();
-      const seconds = currentTime.getSeconds();
+    // --- ÍCONES DO LUCIDE EM REACT (VERSÃO SIMPLIFICADA PARA CDN) ---
+    // Como estamos a usar React no navegador (sem Node.js/NPM), 
+    // precisamos de criar um pequeno componente que renderize os ícones SVG.
+    const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
+      const iconData = lucide.icons[name];
+      if (!iconData) return null;
       
-      if ((hours === 9 || hours === 15 || hours === 20) && minutes === 0 && seconds === 0) {
-        showToast("Lembrete Diário: Continue firme, você está indo muito bem! Respire fundo.", "info");
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+      const svgString = lucide.createElement(iconData).outerHTML;
+      // Ajustando os atributos do SVG
+      const modifiedSvg = svgString
+        .replace(/width="\d+"/, `width="${size}"`)
+        .replace(/height="\d+"/, `height="${size}"`)
+        .replace(/stroke-width="\d+"/, `stroke-width="${strokeWidth}"`)
+        .replace(/class="[^"]*"/, `class="${className}"`);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  const calculateTime = (startTime) => {
-    const diff = Math.max(0, now - startTime);
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((diff / 1000 / 60) % 60);
-    const seconds = Math.floor((diff / 1000) % 60);
-    return { days, hours, minutes, seconds, totalDays: diff / (1000 * 60 * 60 * 24) };
-  };
-
-  const getMaxStreakDays = () => {
-    if (habits.length === 0) return 0;
-    const streaks = habits.map(h => Math.floor(calculateTime(h.startTime).totalDays));
-    return Math.max(...streaks);
-  };
-
-  const confirmReset = () => {
-    if (!resetModal.habitId) return;
-    const id = resetModal.habitId;
-    
-    setHabits(prev => prev.map(h => h.id === id ? { ...h, startTime: Date.now() } : h));
-    setRelapses(prev => [{ id: Date.now(), habitId: id, time: Date.now() }, ...prev]); 
-    showToast("Contador reiniciado. Hoje é um novo começo!", "info");
-    setResetModal({ show: false, habitId: null });
-  };
-
-  const handleResist = (habitId) => {
-    setUrges(prev => [{ id: Date.now(), habitId, time: Date.now() }, ...prev]);
-    showToast("Incrível! Você venceu a vontade.", "success");
-  };
-
-  const handleSaveNote = () => {
-    if (!noteText.trim()) return;
-    const newNote = { id: Date.now(), text: noteText, mood: noteMood, date: Date.now(), streakAtTime: getMaxStreakDays() };
-    setNotes([newNote, ...notes]);
-    setNoteText('');
-    setNoteMood('neutral');
-    showToast("Registro salvo com sucesso!", "success");
-  };
-
-  const handleAddHabit = () => {
-    if (!newHabitName.trim()) return;
-    const newHabit = {
-      id: Date.now().toString(),
-      name: newHabitName,
-      startTime: Date.now(),
-      iconName: 'Target',
-      gradient: 'from-slate-500 to-slate-700',
-      lightBg: 'bg-slate-100',
-      textCol: 'text-slate-700'
+      return <span dangerouslySetInnerHTML={{ __html: modifiedSvg }} style={{ display: 'inline-flex' }} />;
     };
-    setHabits([...habits, newHabit]);
-    setNewHabitName('');
-    setShowAddHabit(false);
-    showToast(`${newHabitName} adicionado com sucesso!`, "success");
-  };
 
-  const TimeBox = ({ value, label, gradient }) => (
-    <div className="flex flex-col items-center justify-center bg-white border-2 border-slate-100 rounded-2xl p-3 flex-1 shadow-sm relative overflow-hidden group">
-      <div className={`absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-20`} />
-      <span className="text-2xl sm:text-3xl font-black text-slate-800 leading-none mb-1">{value.toString().padStart(2, '0')}</span>
-      <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">{label}</span>
-    </div>
-  );
+    // Componentes de Ícones Específicos
+    const Shield = (props) => <Icon name="Shield" {...props} />;
+    const Activity = (props) => <Icon name="Activity" {...props} />;
+    const Heart = (props) => <Icon name="Heart" {...props} />;
+    const Wind = (props) => <Icon name="Wind" {...props} />;
+    const AlertCircle = (props) => <Icon name="AlertCircle" {...props} />;
+    const RefreshCw = (props) => <Icon name="RefreshCw" {...props} />;
+    const X = (props) => <Icon name="X" {...props} />;
+    const PlayCircle = (props) => <Icon name="PlayCircle" {...props} />;
+    const Trophy = (props) => <Icon name="Trophy" {...props} />;
+    const Star = (props) => <Icon name="Star" {...props} />;
+    const Award = (props) => <Icon name="Award" {...props} />;
+    const Crown = (props) => <Icon name="Crown" {...props} />;
+    const ThumbsUp = (props) => <Icon name="ThumbsUp" {...props} />;
+    const MessageSquare = (props) => <Icon name="MessageSquare" {...props} />;
+    const Bell = (props) => <Icon name="Bell" {...props} />;
+    const CheckCircle2 = (props) => <Icon name="CheckCircle2" {...props} />;
+    const ListPlus = (props) => <Icon name="ListPlus" {...props} />;
+    const BookOpen = (props) => <Icon name="BookOpen" {...props} />;
+    const Smile = (props) => <Icon name="Smile" {...props} />;
+    const Frown = (props) => <Icon name="Frown" {...props} />;
+    const Meh = (props) => <Icon name="Meh" {...props} />;
+    const Clock = (props) => <Icon name="Clock" {...props} />;
+    const Zap = (props) => <Icon name="Zap" {...props} />;
+    const Flame = (props) => <Icon name="Flame" {...props} />;
+    const Milestone = (props) => <Icon name="Milestone" {...props} />;
+    const Target = (props) => <Icon name="Target" {...props} />;
+    const Plus = (props) => <Icon name="Plus" {...props} />;
 
-  const getMoodIcon = (moodType, size = 20) => {
-    switch(moodType) {
-      case 'good': return <Smile size={size} className="text-emerald-500" />;
-      case 'bad': return <Frown size={size} className="text-rose-500" />;
-      default: return <Meh size={size} className="text-amber-500" />;
-    }
-  };
+    // --- MAPEAMENTO DE ÍCONES PARA O LOCALSTORAGE ---
+    const iconMap = { Shield, Activity, Target };
 
-  // Junta vitórias e recaídas para exibir no histórico
-  const allEvents = [
-    ...urges.map(u => ({ ...u, type: 'resist' })),
-    ...relapses.map(r => ({ ...r, type: 'relapse' }))
-  ].sort((a, b) => b.time - a.time);
+    // --- DADOS E CONSTANTES ---
+    const MOTIVATIONAL_QUOTES = [
+      "Cada vez que você resiste, você está reescrevendo o seu cérebro. Continue!",
+      "A vontade dura minutos, mas o orgulho de resistir dura o dia todo.",
+      "O progresso não é linear. Um dia de cada vez.",
+      "Você é muito maior do que os seus impulsos momentâneos.",
+      "A disciplina é a ponte entre os seus objetivos e as suas realizações.",
+      "Não troque o que você mais quer na vida por aquilo que você quer agora.",
+      "Sua mente é seu próprio castelo. Defenda-o.",
+      "O suor do esforço de hoje é o sorriso da vitória de amanhã.",
+      "Caia 7 vezes, levante-se 8. A sua força está na resiliência.",
+      "O desconforto da mudança é o preço da sua nova liberdade."
+    ];
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-28 selection:bg-slate-200">
-      
-      {/* Sistema de Toast (Notificações Flutuantes) */}
-      {toast && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className={`px-5 py-4 rounded-2xl shadow-xl flex items-center gap-4 ${toast.type === 'success' ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white' : 'bg-gradient-to-r from-slate-700 to-slate-800 text-white'}`}>
-            {toast.type === 'success' ? <CheckCircle2 size={24} className="shrink-0" /> : <Bell size={24} className="shrink-0" />}
-            <p className="text-sm font-bold">{toast.message}</p>
-          </div>
-        </div>
-      )}
+    const DEFAULT_HABITS = [
+      { id: 'porn', name: 'Pornografia / Masturbação', startTime: Date.now() - (1000 * 60 * 60 * 24 * 2.5), iconName: 'Shield', gradient: 'from-slate-600 to-slate-800', lightBg: 'bg-slate-100', textCol: 'text-slate-700' },
+      { id: 'nails', name: 'Roer Unhas', startTime: Date.now() - (1000 * 60 * 60 * 24 * 8), iconName: 'Activity', gradient: 'from-slate-500 to-slate-700', lightBg: 'bg-slate-100', textCol: 'text-slate-700' }
+    ];
 
-      {/* Header Fixo Cinza Elegante */}
-      <header className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white sticky top-0 z-40 shadow-md border-b border-slate-700">
-        <div className="max-w-md mx-auto px-5 py-5 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10">
-              <Heart size={24} fill="currentColor" className="text-slate-200" />
+    const BADGES = [
+      { days: 0.5, title: 'O Início (12h)', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200' },
+      { days: 1, title: 'Primeiro Passo', icon: Star, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' },
+      { days: 3, title: 'Guerreiro', icon: Shield, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-300' },
+      { days: 7, title: 'Uma Semana!', icon: Award, color: 'text-slate-700', bg: 'bg-slate-200', border: 'border-slate-300' },
+      { days: 15, title: 'Inabalável', icon: Trophy, color: 'text-slate-700', bg: 'bg-slate-200', border: 'border-slate-300' },
+      { days: 30, title: 'Mestre do Hábito', icon: Crown, color: 'text-slate-800', bg: 'bg-slate-300', border: 'border-slate-400' },
+      { days: 60, title: 'Força de Vontade', icon: Zap, color: 'text-slate-800', bg: 'bg-slate-300', border: 'border-slate-400' },
+      { days: 90, title: 'Renascido', icon: Flame, color: 'text-slate-900', bg: 'bg-slate-400', border: 'border-slate-500' },
+      { days: 365, title: 'Lenda Viva', icon: Milestone, color: 'text-slate-900', bg: 'bg-slate-400', border: 'border-slate-500' }
+    ];
+
+    // --- FUNÇÕES DE ARMAZENAMENTO LOCAL ---
+    const loadData = (key, defaultValue) => {
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Erro ao carregar dados", e);
+      }
+      return defaultValue;
+    };
+
+    // --- COMPONENTES AUXILIARES ---
+    const Card = ({ children, className = "" }) => (
+      <div className={`bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 ${className}`}>
+        {children}
+      </div>
+    );
+
+    const Button = ({ children, onClick, variant = "primary", className = "", icon: IconComponent }) => {
+      const baseStyle = "flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold transition-all active:scale-95 shadow-sm";
+      const variants = {
+        primary: "bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:shadow-lg hover:shadow-slate-500/30",
+        success: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-teal-500/30",
+        danger: "bg-gradient-to-r from-rose-500 to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30",
+        outline: "border-2 border-slate-200 text-slate-600 hover:bg-slate-50",
+        ghost: "bg-transparent text-slate-500 hover:bg-slate-100"
+      };
+
+      return (
+        <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`}>
+          {IconComponent && <IconComponent size={20} />}
+          {children}
+        </button>
+      );
+    };
+
+    // --- COMPONENTE DE RESPIRAÇÃO (SOS) ---
+    const BreathingExercise = ({ onClose }) => {
+      const [phase, setPhase] = useState('ready'); 
+      const [timeLeft, setTimeLeft] = useState(0);
+
+      const startExercise = () => {
+        setPhase('inhale');
+        setTimeLeft(4);
+      };
+
+      useEffect(() => {
+        let timer;
+        if (phase !== 'ready' && timeLeft > 0) {
+          timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+        } else if (timeLeft === 0) {
+          if (phase === 'inhale') { setPhase('hold'); setTimeLeft(7); } 
+          else if (phase === 'hold') { setPhase('exhale'); setTimeLeft(8); } 
+          else if (phase === 'exhale') { setPhase('inhale'); setTimeLeft(4); }
+        }
+        return () => clearTimeout(timer);
+      }, [phase, timeLeft]);
+
+      const getCircleStyle = () => {
+        switch (phase) {
+          case 'inhale': return 'scale-150 bg-gradient-to-tr from-slate-300 to-slate-400 shadow-lg shadow-slate-400/50 transition-all duration-[4000ms] ease-out';
+          case 'hold': return 'scale-150 bg-gradient-to-tr from-slate-500 to-slate-600 shadow-lg shadow-slate-500/50 transition-all duration-[7000ms] ease-linear';
+          case 'exhale': return 'scale-100 bg-gradient-to-tr from-slate-200 to-slate-300 shadow-lg shadow-slate-300/50 transition-all duration-[8000ms] ease-in-out';
+          default: return 'scale-100 bg-slate-100 text-slate-600 border-4 border-dashed border-slate-300';
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white/10 border border-white/20 rounded-[40px] w-full max-w-md p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
+            <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+              <X size={28} />
+            </button>
+            <Wind size={40} className="text-slate-300 mb-6 drop-shadow-md" />
+            <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Respire</h2>
+            <p className="text-slate-300 mb-16 text-lg font-medium">
+              {phase === 'ready' ? 'Técnica 4-7-8 para acalmar a mente' : 
+               phase === 'inhale' ? 'Inspire...' : 
+               phase === 'hold' ? 'Segure o ar...' : 'Expire lentamente...'}
+            </p>
+
+            <div className="relative flex items-center justify-center w-56 h-56 mb-16">
+              <div className={`absolute w-36 h-36 rounded-full flex items-center justify-center text-white ${getCircleStyle()}`}>
+                {phase !== 'ready' && <span className="text-4xl font-black drop-shadow-md">{timeLeft}</span>}
+              </div>
+              {phase === 'ready' && (
+                <button onClick={startExercise} className="z-10 bg-white text-slate-800 rounded-full p-5 shadow-xl hover:scale-110 transition-transform">
+                  <PlayCircle size={40} />
+                </button>
+              )}
             </div>
-            <h1 className="text-2xl font-black tracking-tight">
-              Jornada
-            </h1>
           </div>
-          <button 
-            onClick={() => setShowEmergency(true)}
-            className="flex items-center gap-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500 text-white px-4 py-2 rounded-full text-sm font-bold transition-all shadow-sm backdrop-blur-sm active:scale-95"
-          >
-            <AlertCircle size={18} className="text-slate-200" /> SOS
-          </button>
         </div>
-      </header>
+      );
+    };
 
-      <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+    // --- COMPONENTE PRINCIPAL ---
+    function App() {
+      // Estados Principais (Carregando do LocalStorage)
+      const [habits, setHabits] = useState(() => loadData('jc_habits', DEFAULT_HABITS));
+      const [urges, setUrges] = useState(() => loadData('jc_urges', []));
+      const [relapses, setRelapses] = useState(() => loadData('jc_relapses', []));
+      const [notes, setNotes] = useState(() => loadData('jc_notes', []));
+      
+      const [now, setNow] = useState(Date.now());
+      const [showEmergency, setShowEmergency] = useState(false);
+      const [activeTab, setActiveTab] = useState('trackers');
+      const [toast, setToast] = useState(null);
+      const [quoteOfTheDay, setQuoteOfTheDay] = useState('');
+
+      // Salvando no LocalStorage sempre que os estados mudarem
+      useEffect(() => { localStorage.setItem('jc_habits', JSON.stringify(habits)); }, [habits]);
+      useEffect(() => { localStorage.setItem('jc_urges', JSON.stringify(urges)); }, [urges]);
+      useEffect(() => { localStorage.setItem('jc_relapses', JSON.stringify(relapses)); }, [relapses]);
+      useEffect(() => { localStorage.setItem('jc_notes', JSON.stringify(notes)); }, [notes]);
+
+      // Estados Modal de Recaída
+      const [resetModal, setResetModal] = useState({ show: false, habitId: null });
+
+      // Estados Formulário Add Vício
+      const [showAddHabit, setShowAddHabit] = useState(false);
+      const [newHabitName, setNewHabitName] = useState('');
+
+      // Estados do Formulário de Notas
+      const [noteText, setNoteText] = useState('');
+      const [noteMood, setNoteMood] = useState('neutral');
+
+      useEffect(() => {
+        const dayOfYear = Math.floor(Date.now() / 86400000);
+        setQuoteOfTheDay(MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length]);
+
+        const interval = setInterval(() => {
+          const currentTime = new Date();
+          setNow(currentTime.getTime());
+
+          const hours = currentTime.getHours();
+          const minutes = currentTime.getMinutes();
+          const seconds = currentTime.getSeconds();
+          
+          if ((hours === 9 || hours === 15 || hours === 20) && minutes === 0 && seconds === 0) {
+            showToast("Lembrete Diário: Continue firme, você está indo muito bem! Respire fundo.", "info");
+          }
+        }, 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      const showToast = (message, type = "success") => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+      };
+
+      const calculateTime = (startTime) => {
+        const diff = Math.max(0, now - startTime);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        return { days, hours, minutes, seconds, totalDays: diff / (1000 * 60 * 60 * 24) };
+      };
+
+      const getMaxStreakDays = () => {
+        if (habits.length === 0) return 0;
+        const streaks = habits.map(h => Math.floor(calculateTime(h.startTime).totalDays));
+        return Math.max(...streaks);
+      };
+
+      const confirmReset = () => {
+        if (!resetModal.habitId) return;
+        const id = resetModal.habitId;
         
-        {/* Frase do Dia */}
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex gap-4 items-start relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
-          <MessageSquare className="text-slate-400 shrink-0 mt-1" size={28} />
-          <div className="relative z-10">
-            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5">Inspiração Diária</h3>
-            <p className="text-slate-600 text-sm font-medium leading-relaxed">"{quoteOfTheDay}"</p>
-          </div>
-        </div>
+        setHabits(prev => prev.map(h => h.id === id ? { ...h, startTime: Date.now() } : h));
+        setRelapses(prev => [{ id: Date.now(), habitId: id, time: Date.now() }, ...prev]); 
+        showToast("Contador reiniciado. Hoje é um novo começo!", "info");
+        setResetModal({ show: false, habitId: null });
+      };
 
-        {/* CONTEÚDO: CONTADORES */}
-        {activeTab === 'trackers' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {habits.map(habit => {
-              const time = calculateTime(habit.startTime);
-              const Icon = iconMap[habit.iconName] || Target; // Renderiza o ícone a partir do nome salvo na memória
-              
-              return (
-                <Card key={habit.id} className="relative overflow-hidden group">
-                  <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${habit.gradient}`} />
+      const handleResist = (habitId) => {
+        setUrges(prev => [{ id: Date.now(), habitId, time: Date.now() }, ...prev]);
+        showToast("Incrível! Você venceu a vontade.", "success");
+      };
+
+      const handleSaveNote = () => {
+        if (!noteText.trim()) return;
+        const newNote = { id: Date.now(), text: noteText, mood: noteMood, date: Date.now(), streakAtTime: getMaxStreakDays() };
+        setNotes([newNote, ...notes]);
+        setNoteText('');
+        setNoteMood('neutral');
+        showToast("Registro salvo com sucesso!", "success");
+      };
+
+      const handleAddHabit = () => {
+        if (!newHabitName.trim()) return;
+        const newHabit = {
+          id: Date.now().toString(),
+          name: newHabitName,
+          startTime: Date.now(),
+          iconName: 'Target',
+          gradient: 'from-slate-500 to-slate-700',
+          lightBg: 'bg-slate-100',
+          textCol: 'text-slate-700'
+        };
+        setHabits([...habits, newHabit]);
+        setNewHabitName('');
+        setShowAddHabit(false);
+        showToast(`${newHabitName} adicionado com sucesso!`, "success");
+      };
+
+      const TimeBox = ({ value, label, gradient }) => (
+        <div className="flex flex-col items-center justify-center bg-white border-2 border-slate-100 rounded-2xl p-3 flex-1 shadow-sm relative overflow-hidden group">
+          <div className={`absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-20`} />
+          <span className="text-2xl sm:text-3xl font-black text-slate-800 leading-none mb-1">{value.toString().padStart(2, '0')}</span>
+          <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">{label}</span>
+        </div>
+      );
+
+      const getMoodIcon = (moodType, size = 20) => {
+        switch(moodType) {
+          case 'good': return <Smile size={size} className="text-emerald-500" />;
+          case 'bad': return <Frown size={size} className="text-rose-500" />;
+          default: return <Meh size={size} className="text-amber-500" />;
+        }
+      };
+
+      const allEvents = [
+        ...urges.map(u => ({ ...u, type: 'resist' })),
+        ...relapses.map(r => ({ ...r, type: 'relapse' }))
+      ].sort((a, b) => b.time - a.time);
+
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-28 selection:bg-slate-200">
+          
+          {toast && (
+            <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md">
+              <div className={`px-5 py-4 rounded-2xl shadow-xl flex items-center gap-4 ${toast.type === 'success' ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white' : 'bg-gradient-to-r from-slate-700 to-slate-800 text-white'}`}>
+                {toast.type === 'success' ? <CheckCircle2 size={24} className="shrink-0" /> : <Bell size={24} className="shrink-0" />}
+                <p className="text-sm font-bold">{toast.message}</p>
+              </div>
+            </div>
+          )}
+
+          <header className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white sticky top-0 z-40 shadow-md border-b border-slate-700">
+            <div className="max-w-md mx-auto px-5 py-5 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10">
+                  <Heart size={24} fill="currentColor" className="text-slate-200" />
+                </div>
+                <h1 className="text-2xl font-black tracking-tight">
+                  Jornada
+                </h1>
+              </div>
+              <button 
+                onClick={() => setShowEmergency(true)}
+                className="flex items-center gap-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500 text-white px-4 py-2 rounded-full text-sm font-bold transition-all shadow-sm backdrop-blur-sm active:scale-95"
+              >
+                <AlertCircle size={18} className="text-slate-200" /> SOS
+              </button>
+            </div>
+          </header>
+
+          <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+            
+            <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex gap-4 items-start relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-100 to-transparent rounded-bl-full opacity-50 pointer-events-none" />
+              <MessageSquare className="text-slate-400 shrink-0 mt-1" size={28} />
+              <div className="relative z-10">
+                <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1.5">Inspiração Diária</h3>
+                <p className="text-slate-600 text-sm font-medium leading-relaxed">"{quoteOfTheDay}"</p>
+              </div>
+            </div>
+
+            {activeTab === 'trackers' && (
+              <div className="space-y-6">
+                {habits.map(habit => {
+                  const time = calculateTime(habit.startTime);
+                  const IconComp = iconMap[habit.iconName] || Target;
                   
-                  <div className="flex justify-between items-center mb-6 mt-2">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-4 rounded-2xl ${habit.lightBg} ${habit.textCol} shadow-inner border border-slate-200`}>
-                        <Icon size={28} />
+                  return (
+                    <Card key={habit.id} className="relative overflow-hidden group">
+                      <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${habit.gradient}`} />
+                      
+                      <div className="flex justify-between items-center mb-6 mt-2">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-4 rounded-2xl ${habit.lightBg} ${habit.textCol} shadow-inner border border-slate-200`}>
+                            <IconComp size={28} />
+                          </div>
+                          <h2 className="text-xl font-black text-slate-800 tracking-tight">{habit.name}</h2>
+                        </div>
                       </div>
-                      <h2 className="text-xl font-black text-slate-800 tracking-tight">{habit.name}</h2>
+
+                      <div className="flex justify-between gap-2 sm:gap-3 mb-8">
+                        <TimeBox value={time.days} label="Dias" gradient={habit.gradient} />
+                        <TimeBox value={time.hours} label="Horas" gradient={habit.gradient} />
+                        <TimeBox value={time.minutes} label="Min" gradient={habit.gradient} />
+                        <TimeBox value={time.seconds} label="Seg" gradient={habit.gradient} />
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <Button 
+                          variant="success" 
+                          className="w-full py-5 text-lg shadow-teal-500/20"
+                          onClick={() => handleResist(habit.id)}
+                          icon={ThumbsUp}
+                        >
+                          Senti vontade, mas resisti!
+                        </Button>
+                      </div>
+
+                      <div className="mt-5 border-t border-slate-100 pt-4 flex justify-center">
+                        <button 
+                          onClick={() => setResetModal({ show: true, habitId: habit.id })}
+                          className="flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                        >
+                          <RefreshCw size={14} /> Tive uma recaída (Zerar)
+                        </button>
+                      </div>
+                    </Card>
+                  );
+                })}
+
+                <button 
+                  onClick={() => setShowAddHabit(true)}
+                  className="w-full py-5 border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-all"
+                >
+                  <div className="bg-slate-100 p-3 rounded-full text-slate-600">
+                    <Plus size={24} />
+                  </div>
+                  <span className="font-bold text-sm">Monitorar Outro Vício</span>
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'journal' && (
+              <div className="space-y-6">
+                <Card className="border-t-4 border-t-slate-700">
+                  <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
+                    <BookOpen size={24} className="text-slate-700" />
+                    Como você está se sentindo?
+                  </h2>
+                  <p className="text-sm text-slate-500 mb-5">Selecione o seu humor primeiro para guiar o seu registro.</p>
+                  
+                  <div className="flex items-center mb-4">
+                    <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200 w-full sm:w-auto">
+                      {[
+                        { id: 'bad', icon: Frown, color: 'text-rose-500', activeBg: 'bg-white shadow-sm border border-slate-200' },
+                        { id: 'neutral', icon: Meh, color: 'text-amber-500', activeBg: 'bg-white shadow-sm border border-slate-200' },
+                        { id: 'good', icon: Smile, color: 'text-emerald-500', activeBg: 'bg-white shadow-sm border border-slate-200' }
+                      ].map(m => (
+                        <button
+                          key={m.id}
+                          onClick={() => setNoteMood(m.id)}
+                          className={`p-3 flex-1 sm:flex-none rounded-lg transition-all flex justify-center ${noteMood === m.id ? m.activeBg : 'hover:bg-slate-200 opacity-60 hover:opacity-100'}`}
+                        >
+                          <m.icon size={24} className={m.color} />
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="flex justify-between gap-2 sm:gap-3 mb-8">
-                    <TimeBox value={time.days} label="Dias" gradient={habit.gradient} />
-                    <TimeBox value={time.hours} label="Horas" gradient={habit.gradient} />
-                    <TimeBox value={time.minutes} label="Min" gradient={habit.gradient} />
-                    <TimeBox value={time.seconds} label="Seg" gradient={habit.gradient} />
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    {/* Botão de Resisti */}
-                    <Button 
-                      variant="success" 
-                      className="w-full py-5 text-lg shadow-teal-500/20"
-                      onClick={() => handleResist(habit.id)}
-                      icon={ThumbsUp}
-                    >
-                      Senti vontade, mas resisti!
+                  <textarea 
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder={
+                      noteMood === 'good' ? "Hoje não senti vontade, estou forte e no controle. O destaque do dia foi..." :
+                      noteMood === 'bad' ? "Hoje foi muito difícil, senti muita vontade e acabei caindo. Isso aconteceu porque..." :
+                      "Senti uma vontade forte hoje, hesitei, mas consegui resistir. O que me ajudou foi..."
+                    }
+                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-100 transition-all min-h-[120px] resize-none mb-4"
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button onClick={handleSaveNote} variant="primary" className="px-8 py-3">
+                      Salvar Registro
                     </Button>
                   </div>
-
-                  {/* Botão de Recaída */}
-                  <div className="mt-5 border-t border-slate-100 pt-4 flex justify-center">
-                    <button 
-                      onClick={() => setResetModal({ show: true, habitId: habit.id })}
-                      className="flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
-                    >
-                      <RefreshCw size={14} /> Tive uma recaída (Zerar)
-                    </button>
-                  </div>
                 </Card>
-              );
-            })}
 
-            {/* Adicionar Novo Vício */}
-            <button 
-              onClick={() => setShowAddHabit(true)}
-              className="w-full py-5 border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition-all"
-            >
-              <div className="bg-slate-100 p-3 rounded-full text-slate-600">
-                <Plus size={24} />
+                <div className="space-y-4">
+                  <h3 className="font-bold text-slate-400 uppercase tracking-widest text-xs px-2">Seus Registros</h3>
+                  
+                  {notes.length === 0 ? (
+                    <div className="text-center py-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                      <BookOpen size={32} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-slate-500 font-medium">Seu diário está vazio.<br/>Comece a escrever a sua jornada!</p>
+                    </div>
+                  ) : (
+                    notes.map(note => {
+                      const date = new Date(note.date);
+                      return (
+                        <Card key={note.id} className="!p-4 sm:!p-5 border-slate-200">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                                {getMoodIcon(note.mood, 24)}
+                              </div>
+                              <div>
+                                <span className="bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md">
+                                  Dia {note.streakAtTime} limpo
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs font-bold text-slate-400">
+                              {date.toLocaleDateString('pt-BR')} às {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-slate-700 leading-relaxed text-sm whitespace-pre-wrap">{note.text}</p>
+                        </Card>
+                      )
+                    })
+                  )}
+                </div>
               </div>
-              <span className="font-bold text-sm">Monitorar Outro Vício</span>
-            </button>
-          </div>
-        )}
+            )}
 
-        {/* CONTEÚDO: DIÁRIO / BLOCO DE NOTAS */}
-        {activeTab === 'journal' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Card className="border-t-4 border-t-slate-700">
-              <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
-                <BookOpen size={24} className="text-slate-700" />
-                Como você está se sentindo?
-              </h2>
-              <p className="text-sm text-slate-500 mb-5">Selecione o seu humor primeiro para guiar o seu registro.</p>
-              
-              {/* Selecionador de Humor */}
-              <div className="flex items-center mb-4">
-                <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200 w-full sm:w-auto">
-                  {[
-                    { id: 'bad', icon: Frown, color: 'text-rose-500', activeBg: 'bg-white shadow-sm border border-slate-200' },
-                    { id: 'neutral', icon: Meh, color: 'text-amber-500', activeBg: 'bg-white shadow-sm border border-slate-200' },
-                    { id: 'good', icon: Smile, color: 'text-emerald-500', activeBg: 'bg-white shadow-sm border border-slate-200' }
-                  ].map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => setNoteMood(m.id)}
-                      className={`p-3 flex-1
+            {activeTab === 'badges' && (
+              <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-black text-slate-800">Suas Conquistas</h2>
+                  <p className="text-sm font-medium text-slate-500 mt-1">Acumule dias limpos para desbloquear.</p>
+                </div>
+                
+                {habits.map(habit => {
+                  const time = calculateTime(habit.startTime);
+                  const IconComp = iconMap[habit.iconName] || Target;
+                  return (
+                    <Card key={`badges-${habit.id}`} className="mb-6 overflow-hidden">
+                      <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                        <div className={`p-2 rounded-lg ${habit.lightBg} ${habit.textCol} border border-slate-200`}>
+                          <IconComp size={20} />
+                        </div>
+                        <h3 className="font-bold text-slate-800">{habit.name}</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                        {BADGES.map((badge, idx) => {
+                          const isUnlocked = time.totalDays >= badge.days;
+                          return (
+                            <div key={idx} className={`flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl transition-all ${isUnlocked ? `bg-white shadow-sm border-2 ${badge.border}` : 'bg-slate-50 border-2 border-slate-100 opacity-60 grayscale'}`}>
+                              <div className={`p-3 sm:p-4 rounded-full mb-3 ${isUnlocked ? badge.bg : 'bg-slate-200'} ${isUnlocked ? badge.color : 'text-slate-400'} shadow-inner border border-white`}>
+                                <badge.icon size={24} />
+                              </div>
+                              <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wide leading-tight ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>{badge.title}</span>
+                              <span className="text-[10px] font-bold text-slate-400 mt-1">{badge.days} {badge.days === 1 ? 'dia' : 'dias'}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
+
+            {activeTab === 'more' && (
+              <div className="space-y-6">
+                
+                <Card className="border-t-4 border-t-slate-700">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                      <ListPlus size={24} className="text-slate-700" />
+                      Histórico
+                    </h2>
+                    <div className="flex gap-2">
+                      <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-black shadow-sm flex items-center gap-1">
+                        <ThumbsUp size={12} /> {urges.length} Vitórias
+                      </div>
+                      <div className="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black shadow-sm flex items-center gap-1">
+                        <RefreshCw size={12} /> {relapses.length} Recaídas
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm font-medium text-slate-500 mb-6">
+                    Acompanhe as vezes que você resistiu ou recaiu. Cada registro ajuda no seu autoconhecimento:
+                  </p>
+
+                  {allEvents.length === 0 ? (
+                    <div className="text-center py-8 bg-slate-50 rounded-2xl border border-slate-200">
+                      <ThumbsUp size={32} className="mx-auto text-slate-300 mb-2" />
+                      <p className="text-slate-500 text-sm font-medium">Nenhum registro ainda.<br/>Você consegue!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {allEvents.map(event => {
+                        const habit = habits.find(h => h.id === event.habitId);
+                        const date = new Date(event.time);
+                        const isResist = event.type === 'resist';
+                        return (
+                          <div key={event.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-4">
+                              <div className={`${isResist ? 'bg-slate-800 text-white' : 'bg-rose-100 text-rose-600'} p-2.5 rounded-xl shadow-sm`}>
+                                {isResist ? <CheckCircle2 size={20} /> : <RefreshCw size={20} />}
+                              </div>
+                              <div>
+                                <p className={`text-sm font-black ${isResist ? 'text-slate-800' : 'text-rose-600'}`}>
+                                  {isResist ? 'Resistiu com sucesso!' : 'Tive uma recaída'}
+                                </p>
+                                <p className="text-xs font-bold text-slate-500">{habit?.name}</p>
+                              </div>
+                            </div>
+                            <div className="text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                              {date.toLocaleDateString('pt-BR')} <br/>
+                              {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Card>
+
+                <div className="pt-4">
+                  <h2 className="text-2xl font-black text-slate-800 mb-4 px-2">Dicas Práticas</h2>
+                  <div className="space-y-4">
+                    <Card>
+                      <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2">
+                        <Shield size={20} className="text-slate-500" /> Pornografia/Masturbação
+                      </h3>
+                      <ul className="space-y-3 text-sm font-medium text-slate-600">
+                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Cuidado com o HALT:</strong> A vontade ataca mais quando você está com Fome, Irritado, Solitário ou Cansado.</span></li>
+                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Mude de Ambiente:</strong> Sentiu a vontade? Levante-se imediatamente e saia do cômodo. O movimento físico quebra o padrão mental.</span></li>
+                      </ul>
+                    </Card>
+
+                    <Card>
+                      <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2">
+                        <Activity size={20} className="text-slate-500" /> Roer Unhas
+                      </h3>
+                      <ul className="space-y-3 text-sm font-medium text-slate-600">
+                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Identifique o Gatilho:</strong> Você rói as unhas quando está ansioso, entediado ou assistindo TV? Use o diário da app para anotar.</span></li>
+                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Mãos Ocupadas:</strong> Tenha sempre por perto uma bola antiestresse, um elástico de cabelo no pulso ou um anel giratório.</span></li>
+                      </ul>
+                    </Card>
+                    
+                    <Card>
+                      <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2">
+                        <Target size={20} className="text-slate-500" /> Compras por Impulso
+                      </h3>
+                      <ul className="space-y-3 text-sm font-medium text-slate-600">
+                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>A Regra das 24h:</strong> Quer comprar algo que não é essencial? Coloque no carrinho e espere 24 horas. Na maioria das vezes a vontade passa.</span></li>
+                        <li className="flex gap-2"><span className="text-slate-400 font-bold">•</span> <span><strong>Desinstale Aplicativos:</strong> Crie atrito. Exclua o app de entregas ou remova os seus cartões salvos para não comprar com "1 clique".</span></li>
+                      </ul>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
+
+          {showAddHabit && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-xl relative animate-in zoom-in-95 duration-200">
+                <button onClick={() => setShowAddHabit(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1">
+                  <X size={20} />
+                </button>
+                <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                  <Plus size={24} className="text-slate-500" /> Novo Vício
+                </h3>
+                <p className="text-sm text-slate-500 mb-4">O que mais você deseja monitorar? (ex: Compras, Redes Sociais)</p>
+                <input 
+                  autoFocus
+                  type="text"
+                  value={newHabitName}
+                  onChange={(e) => setNewHabitName(e.target.value)}
+                  placeholder="Nome do hábito..."
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-4 text-slate-700 font-bold focus:outline-none focus:border-slate-500 focus:ring-4 focus:ring-slate-100 transition-all mb-6"
+                />
+                <Button onClick={handleAddHabit} variant="primary" className="w-full">
+                  Começar a Monitorar
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {resetModal.show && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-xl relative animate-in zoom-in-95 duration-200 text-center">
+                <div className="bg-rose-100 text-rose-500 p-4 rounded-full inline-flex mb-4">
+                  <RefreshCw size={32} />
+                </div>
+                <h3 className="text-xl font-black text-slate-800 mb-2">Tive uma recaída</h3>
+                <p className="text-sm text-slate-500 mb-6">
+                  Lembre-se: uma recaída não zera o seu aprendizado. Respire fundo. Tem certeza de que quer zerar este contador?
+                </p>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setResetModal({ show: false, habitId: null })}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={confirmReset}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-sm"
+                  >
+                    Sim, zerar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 pb-safe pt-2 z-40">
+            <div className="max-w-md mx-auto flex justify-around px-2 pb-2">
+              {[
+                { id: 'trackers', icon: Shield, label: 'Contadores' },
+                { id: 'journal', icon: BookOpen, label: 'Diário' },
+                { id: 'badges', icon: Trophy, label: 'Conquistas' },
+                { id: 'more', icon: ListPlus, label: 'Mais' }
+              ].map(tab => {
+                const isActive = activeTab === tab.id;
+                const IconComponent = tab.icon;
+                return (
+                  <button 
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex flex-col items-center justify-center w-16 sm:w-20 pt-2 pb-1 gap-1 transition-all ${
+                      isActive ? 'text-slate-800 scale-110' : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <div className={`relative ${isActive ? 'drop-shadow-md' : ''}`}>
+                      <IconComponent size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      {isActive && <span className="absolute -bottom-2 left-1/2 w-1.5 h-1.5 bg-slate-800 rounded-full transform -translate-x-1/2" />}
+                    </div>
+                    <span className={`text-[10px] font-bold mt-1 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                      {tab.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </nav>
+
+          {showEmergency && <BreathingExercise onClose={() => setShowEmergency(false)} />}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
