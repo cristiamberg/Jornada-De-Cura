@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jornada de Cura - Superando Vícios</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #f8fafc;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .card-hover {
+      transition: all 0.2s ease;
+    }
+    
+    .card-hover:active {
+      transform: scale(0.98);
+    }
+    
+    /* Esconde scrollbar */
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // --- DADOS ---
+    const QUOTES = [
+      "Cada vez que você resiste, você está reescrevendo o seu cérebro. Continue!",
+      "A vontade dura minutos, mas o orgulho de resistir dura o dia todo.",
+      "O progresso não é linear. Um dia de cada vez.",
+      "Você é muito maior do que os seus impulsos momentâneos.",
+      "A disciplina é a ponte entre os seus objetivos e as suas realizações.",
+      "Não troque o que você mais quer na vida por aquilo que você quer agora.",
+      "Sua mente é seu próprio castelo. Defenda-o.",
+      "O desconforto da mudança é o preço da sua nova liberdade."
+    ];
+
+    const DEFAULT_HABITS = [
+      { id: 'porn', name: 'Pornografia / Masturbação', startTime: Date.now() - (86400000 * 2.5), icon: '🛡️' },
+      { id: 'nails', name: 'Roer Unhas', startTime: Date.now() - (86400000 * 8), icon: '💪' }
+    ];
+
+    const BADGES = [
+      { days: 1, title: 'Primeiro Passo', icon: '⭐' },
+      { days: 3, title: 'Guerreiro', icon: '🛡️' },
+      { days: 7, title: 'Uma Semana!', icon: '🏆' },
+      { days: 15, title: 'Inabalável', icon: '🎖️' },
+      { days: 30, title: 'Mestre', icon: '👑' },
+      { days: 60, title: 'Força', icon: '⚡' },
+      { days: 90, title: 'Renascido', icon: '🔥' }
+    ];
+
+    // --- HELPERS ---
+    const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+    const loadData = (key, defaults) => {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaults;
+    };
+
+    const formatTime = (ms) => {
+      const days = Math.floor(ms / 86400000);
+      const hours = Math.floor((ms % 86400000) / 3600000);
+      const minutes = Math.floor((ms % 3600000) / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      return { days, hours, minutes, seconds };
+    };
+
+    // --- COMPONENTES ---
+    const TimeBox = (value, label) => {
+      const val = value.toString().padStart(2, '0');
+      return `
+        <div class="flex-1 bg-white rounded-2xl p-3 text-center border border-slate-200 shadow-sm">
+          <div class="text-2xl sm:text-3xl font-black text-slate-800">${val}</div>
+          <div class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">${label}</div>
+        </div>
+      `;
+    };
+
+    const MoodSelector = (selected, onChange) => {
+      const moods = [
+        { id: 'bad', label: '😞 Ruim', color: 'text-rose-500' },
+        { id: 'neutral', label: '😐 Neutro', color: 'text-amber-500' },
+        { id: 'good', label: '😊 Bom', color: 'text-emerald-500' }
+      ];
+      return moods.map(mood => `
+        <button onclick="${onChange}('${mood.id}')" 
+          class="flex-1 py-2 rounded-xl font-bold transition ${selected === mood.id ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}">
+          ${mood.label}
+        </button>
+      `).join('');
+    };
+
+    // --- APP STATE ---
+    let appState = {
+      habits: loadData('jc_habits', DEFAULT_HABITS),
+      urges: loadData('jc_urges', []),
+      relapses: loadData('jc_relapses', []),
+      notes: loadData('jc_notes', []),
+      activeTab: 'trackers',
+      now: Date.now(),
+      showEmergency: false,
+      showResetModal: false,
+      showAddHabit: false,
+      resetHabitId: null,
+      newHabitName: '',
+      noteText: '',
+      noteMood: 'neutral',
+      toast: null,
+      quote: QUOTES[Math.floor(Math.random() * QUOTES.length)]
+    };
+
+    // Timer atualização
+    setInterval(() => {
+      appState.now = Date.now();
+      renderApp();
+    }, 1000);
+
+    // Funções de ação
+    const showToast = (message, type = 'success') => {
+      appState.toast = { message, type };
+      renderApp();
+      setTimeout(() => {
+        appState.toast = null;
+        renderApp();
+      }, 3000);
+    };
+
+    const handleResist = (habitId) => {
+      appState.urges = [{ id: Date.now(), habitId, time: Date.now() }, ...appState.urges];
+      saveData('jc_urges', appState.urges);
+      showToast('🎉 Incrível! Você venceu a vontade!');
+      renderApp();
+    };
+
+    const handleRelapse = () => {
+      if (!appState.resetHabitId) return;
+      appState.habits = appState.habits.map(h => 
+        h.id === appState.resetHabitId ? { ...h, startTime: Date.now() } : h
+      );
+      appState.relapses = [{ id: Date.now(), habitId: appState.resetHabitId, time: Date.now() }, ...appState.relapses];
+      saveData('jc_habits', appState.habits);
+      saveData('jc_relapses', appState.relapses);
+      showToast('Contador reiniciado. Novo começo! 💪', 'info');
+      appState.showResetModal = false;
+      renderApp();
+    };
+
+    const handleSaveNote = () => {
+      if (!appState.noteText.trim()) return;
+      const streak = Math.max(...appState.habits.map(h => {
+        const diff = Math.max(0, appState.now - h.startTime);
+        return Math.floor(diff / 86400000);
+      }));
+      const newNote = {
+        id: Date.now(),
+        text: appState.noteText,
+        mood: appState.noteMood,
+        date: Date.now(),
+        streak
+      };
+      appState.notes = [newNote, ...appState.notes];
+      saveData('jc_notes', appState.notes);
+      appState.noteText = '';
+      showToast('📝 Registro salvo com sucesso!');
+      renderApp();
+    };
+
+    const handleAddHabit = () => {
+      if (!appState.newHabitName.trim()) return;
+      const newHabit = {
+        id: Date.now().toString(),
+        name: appState.newHabitName,
+        startTime: Date.now(),
+        icon: '🎯'
+      };
+      appState.habits = [...appState.habits, newHabit];
+      saveData('jc_habits', appState.habits);
+      appState.newHabitName = '';
+      appState.showAddHabit = false;
+      showToast(`${appState.newHabitName} adicionado com sucesso!`);
+      renderApp();
+    };
+
+    const calculateStreak = (startTime) => {
+      const diff = Math.max(0, appState.now - startTime);
+      return formatTime(diff);
+    };
+
+    // --- RENDER PRINCIPAL ---
+    const renderApp = () => {
+      const html = `
+        <div class="min-h-screen bg-slate-50 pb-24">
+          ${appState.toast ? `
+            <div class="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-fadeIn">
+              <div class="px-5 py-3 rounded-2xl shadow-lg text-white font-bold ${appState.toast.type === 'success' ? 'bg-emerald-600' : 'bg-slate-800'}">
+                ${appState.toast.message}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Header -->
+          <header class="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white sticky top-0 z-40 shadow-lg border-b border-slate-700">
+            <div class="max-w-md mx-auto px-5 py-4 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-xl backdrop-blur-sm">
+                  <span class="text-2xl">❤️</span>
+                </div>
+                <h1 class="text-2xl font-black tracking-tight">Jornada</h1>
+              </div>
+              <button onclick="appState.showEmergency = true; renderApp();" 
+                class="flex items-center gap-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500 px-4 py-2 rounded-full text-sm font-bold transition">
+                <span>🆘</span> SOS
+              </button>
+            </div>
+          </header>
+
+          <!-- Main Content -->
+          <main class="max-w-md mx-auto px-4 py-6 space-y-6">
+            <!-- Quote -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex gap-3">
+              <span class="text-2xl">💬</span>
+              <p class="text-slate-600 text-sm font-medium leading-relaxed">"${appState.quote}"</p>
+            </div>
+
+            ${appState.activeTab === 'trackers' ? `
+              <div class="space-y-5">
+                ${appState.habits.map(habit => {
+                  const time = calculateStreak(habit.startTime);
+                  const totalDays = Math.floor((appState.now - habit.startTime) / 86400000);
+                  return `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 relative overflow-hidden">
+                      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-600 to-slate-800"></div>
+                      <div class="flex items-center gap-3 mb-5">
+                        <div class="bg-slate-100 p-3 rounded-xl text-2xl">${habit.icon}</div>
+                        <h2 class="text-xl font-black text-slate-800">${habit.name}</h2>
+                      </div>
+                      <div class="flex gap-2 mb-5">
+                        ${TimeBox(time.days, 'DIAS')}
+                        ${TimeBox(time.hours, 'HORAS')}
+                        ${TimeBox(time.minutes, 'MIN')}
+                        ${TimeBox(time.seconds, 'SEG')}
+                      </div>
+                      <button onclick="handleResist('${habit.id}')" 
+                        class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-bold mb-3 hover:shadow-lg transition-all active:scale-95">
+                        👍 Senti vontade, mas resisti!
+                      </button>
+                      <button onclick="appState.showResetModal = true; appState.resetHabitId = '${habit.id}'; renderApp();" 
+                        class="w-full text-slate-400 text-sm py-2 hover:text-rose-500 transition">
+                        🔄 Tive uma recaída (Zerar)
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+                
+                <button onclick="appState.showAddHabit = true; renderApp();" 
+                  class="w-full py-5 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 text-slate-500 hover:text-slate-800 hover:border-slate-400 transition">
+                  <div class="bg-slate-100 p-3 rounded-full text-2xl">➕</div>
+                  <span class="font-bold text-sm">Monitorar Outro Hábito</span>
+                </button>
+              </div>
+            ` : ''}
+
+            ${appState.activeTab === 'journal' ? `
+              <div class="space-y-5">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-t-slate-700">
+                  <h2 class="text-xl font-black mb-3 flex items-center gap-2">
+                    <span>📖</span> Como você está se sentindo?
+                  </h2>
+                  <p class="text-sm text-slate-500 mb-4">Selecione seu humor e registre seu dia</p>
+                  <div class="flex gap-2 mb-4">
+                    ${MoodSelector(appState.noteMood, (mood) => {
+                      appState.noteMood = mood;
+                      renderApp();
+                    })}
+                  </div>
+                  <textarea id="noteInput" 
+                    placeholder="${appState.noteMood === 'good' ? 'Hoje foi um bom dia! Consegui resistir às tentações...' : appState.noteMood === 'bad' ? 'Hoje foi difícil, mas vou aprender com isso...' : 'Senti vontades hoje, mas consegui me manter forte...'}"
+                    class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 min-h-[100px] mb-3 focus:outline-none focus:border-slate-400"></textarea>
+                  <button onclick="appState.noteText = document.getElementById('noteInput').value; handleSaveNote();" 
+                    class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-700 transition">
+                    Salvar Registro
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  <h3 class="font-bold text-slate-400 text-xs px-2">📝 SEUS REGISTROS</h3>
+                  ${appState.notes.length === 0 ? `
+                    <div class="text-center py-10 text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed">
+                      <span class="text-4xl block mb-2">📭</span>
+                      <p class="font-medium">Nenhum registro ainda</p>
+                    </div>
+                  ` : appState.notes.map(note => `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                      <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xl">${note.mood === 'good' ? '😊' : note.mood === 'bad' ? '😞' : '😐'}</span>
+                          <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">Dia ${note.streak}</span>
+                        </div>
+                        <span class="text-xs text-slate-400">${new Date(note.date).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <p class="text-slate-700 text-sm leading-relaxed">${note.text}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            ${appState.activeTab === 'badges' ? `
+              <div class="space-y-5">
+                <div class="text-center mb-4">
+                  <h2 class="text-2xl font-black">🏆 Suas Conquistas</h2>
+                  <p class="text-slate-500 text-sm">Acumule dias limpos para desbloquear medalhas</p>
+                </div>
+                ${appState.habits.map(habit => {
+                  const days = Math.floor((appState.now - habit.startTime) / 86400000);
+                  return `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm">
+                      <h3 class="font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">${habit.icon}</span> ${habit.name}
+                      </h3>
+                      <div class="grid grid-cols-3 gap-3">
+                        ${BADGES.map(badge => `
+                          <div class="text-center p-3 rounded-xl ${days >= badge.days ? 'bg-slate-100 border border-slate-200' : 'opacity-40'}">
+                            <div class="text-3xl mb-1">${badge.icon}</div>
+                            <div class="text-xs font-bold mt-1">${badge.title}</div>
+                            <div class="text-[10px] text-slate-400">${badge.days} dias</div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+
+            ${appState.activeTab === 'more' ? `
+              <div class="space-y-5">
+                <div class="bg-white rounded-2xl p-5 shadow-sm">
+                  <h2 class="text-xl font-bold mb-3 flex items-center gap-2">
+                    <span>📊</span> Histórico
+                  </h2>
+                  <div class="flex gap-2 mb-4">
+                    <div class="flex-1 text-center p-3 bg-emerald-100 rounded-xl">
+                      <div class="text-2xl font-bold text-emerald-700">${appState.urges.length}</div>
+                      <div class="text-xs text-emerald-600 font-bold">VITÓRIAS</div>
+                    </div>
+                    <div class="flex-1 text-center p-3 bg-rose-100 rounded-xl">
+                      <div class="text-2xl font-bold text-rose-700">${appState.relapses.length}</div>
+                      <div class="text-xs text-rose-600 font-bold">RECAÍDAS</div>
+                    </div>
+                  </div>
+                  ${[...appState.urges.map(u => ({ ...u, type: 'resist' })), ...appState.relapses.map(r => ({ ...r, type: 'relapse' }))]
+                    .sort((a, b) => b.time - a.time)
+                    .map(event => {
+                      const habit = appState.habits.find(h => h.id === event.habitId);
+                      return `
+                        <div class="flex justify-between items-center p-3 border-b border-slate-100">
+                          <div class="flex items-center gap-3">
+                            <span class="text-xl">${event.type === 'resist' ? '👍' : '🔄'}</span>
+                            <div>
+                              <div class="font-bold text-sm">${event.type === 'resist' ? 'Resistiu!' : 'Recaída'}</div>
+                              <div class="text-xs text-slate-400">${habit?.name}</div>
+                            </div>
+                          </div>
+                          <div class="text-xs text-slate-400">${new Date(event.time).toLocaleDateString('pt-BR')}</div>
+                        </div>
+                      `;
+                    }).join('') || '<div class="text-center py-8 text-slate-400">Nenhum evento registrado</div>'}
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm">
+                  <h2 class="text-xl font-bold mb-3 flex items-center gap-2">
+                    <span>💡</span> Dicas Práticas
+                  </h2>
+                  <div class="space-y-3 text-sm text-slate-600">
+                    <p>• <strong>Respire fundo:</strong> Faça 10 respirações profundas quando sentir vontade</p>
+                    <p>• <strong>Mude de ambiente:</strong> Saia do local que está gerando o gatilho</p>
+                    <p>• <strong>Beba água:</strong> Um copo de água gelada ajuda a diminuir a ansiedade</p>
+                    <p>• <strong>Lembre-se do propósito:</strong> Por que você começou essa jornada?</p>
+                    <p>• <strong>Use o diário:</strong> Escrever ajuda a processar as emoções</p>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+          </main>
+
+          <!-- Bottom Navigation -->
+          <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-slate-200 pb-2 pt-2">
+            <div class="max-w-md mx-auto flex justify-around px-4">
+              ${[
+                { id: 'trackers', icon: '⏱️', label: 'Contadores' },
+                { id: 'journal', icon: '📖', label: 'Diário' },
+                { id: 'badges', icon: '🏆', label: 'Conquistas' },
+                { id: 'more', icon: '📋', label: 'Mais' }
+              ].map(tab => `
+                <button onclick="appState.activeTab = '${tab.id}'; renderApp();" 
+                  class="flex flex-col items-center gap-1 py-1 px-4 rounded-xl transition ${appState.activeTab === tab.id ? 'text-slate-800 scale-110' : 'text-slate-400'}">
+                  <span class="text-2xl">${tab.icon}</span>
+                  <span class="text-[10px] font-bold">${tab.label}</span>
+                </button>
+              `).join('')}
+            </div>
+          </nav>
+
+          <!-- Modals -->
+          ${appState.showEmergency ? `
+            <div class="fixed inset-0 bg-slate-900/95 z-50 flex items-center justify-center p-5">
+              <div class="bg-white rounded-3xl p-8 text-center max-w-sm w-full">
+                <span class="text-6xl block mb-4">🌬️</span>
+                <h2 class="text-2xl font-bold mb-2">Respiração 4-7-8</h2>
+                <p class="text-slate-500 mb-6">Inspire por 4 segundos<br>Segure por 7 segundos<br>Expire por 8 segundos</p>
+                <p class="text-sm text-slate-400 mb-6">Repita 4 vezes para acalmar a mente</p>
+                <button onclick="appState.showEmergency = false; renderApp();" 
+                  class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">
+                  Fechar
+                </button>
+              </div>
+            </div>
+          ` : ''}
+
+          ${appState.showResetModal ? `
+            <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5">
+              <div class="bg-white rounded-2xl p-6 max-w-sm w-full">
+                <h2 class="text-xl font-bold mb-3">Confirmar recaída?</h2>
+                <p class="text-slate-500 mb-6">Lembre-se: cada recaída é uma oportunidade de aprender e recomeçar mais forte. Você consegue!</p>
+                <div class="flex gap-3">
+                  <button onclick="appState.showResetModal = false; renderApp();" 
+                    class="flex-1 py-2 rounded-xl border border-slate-200 font-bold">
+                    Cancelar
+                  </button>
+                  <button onclick="handleRelapse()" 
+                    class="flex-1 py-2 rounded-xl bg-rose-600 text-white font-bold">
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${appState.showAddHabit ? `
+            <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5">
+              <div class="bg-white rounded-2xl p-6 max-w-sm w-full">
+                <h2 class="text-xl font-bold mb-3">➕ Novo Hábito</h2>
+                <input type="text" id="newHabitInput" 
+                  placeholder="Ex: Parar de fumar, Redes sociais..."
+                  class="w-full border-2 border-slate-200 rounded-xl p-3 mb-4 focus:outline-none focus:border-slate-400">
+                <div class="flex gap-3">
+                  <button onclick="appState.showAddHabit = false; renderApp();" 
+                    class="flex-1 py-2 rounded-xl border border-slate-200 font-bold">
+                    Cancelar
+                  </button>
+                  <button onclick="appState.newHabitName = document.getElementById('newHabitInput').value; handleAddHabit();" 
+                    class="flex-1 py-2 rounded-xl bg-slate-800 text-white font-bold">
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      document.getElementById('app').innerHTML = html;
+    };
+
+    // Inicializar
+    renderApp();
+  </script>
+</body>
+</html>
